@@ -64,23 +64,19 @@ export class SceneManager {
   }
 
   _setupLights() {
-    // 微弱环境光（保持暗调）
-    const ambient = new THREE.AmbientLight(0x1a1a2e, 0.4);
+    // 环境光
+    const ambient = new THREE.AmbientLight(0x333344, 0.6);
     this.scene.add(ambient);
     
-    // 主光源（模拟太阳，暖白色）
-    const sun = new THREE.DirectionalLight(0xfff5e6, 1.2);
+    // 主光源（模拟太阳）
+    const sun = new THREE.DirectionalLight(0xffffff, 1.5);
     sun.position.set(5, 3, 5);
     this.scene.add(sun);
     
-    // 冷色补光（模拟天空散射）
-    const fill = new THREE.DirectionalLight(0x4477aa, 0.25);
+    // 补光
+    const fill = new THREE.DirectionalLight(0x6688aa, 0.4);
     fill.position.set(-3, -1, -3);
     this.scene.add(fill);
-    
-    // 微弱的半球光（天空/地面）
-    const hemi = new THREE.HemisphereLight(0x3355aa, 0x112233, 0.15);
-    this.scene.add(hemi);
   }
 
   /**

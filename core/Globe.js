@@ -53,15 +53,19 @@ export class Globe extends BaseComponent {
     
     // 加载真实地球纹理
     const textureLoader = new THREE.TextureLoader();
-    const texture = textureLoader.load('/vendor/earth_texture.jpg');
+    const texture = textureLoader.load('/vendor/earth_texture.jpg', 
+      (tex) => { console.log('纹理加载成功:', tex.image.width, tex.image.height); },
+      undefined,
+      (err) => { console.error('纹理加载失败:', err); }
+    );
     texture.anisotropy = 4;
     
     const material = new THREE.MeshPhongMaterial({
       map: texture,
       shininess: 15,
       specular: new THREE.Color(0x222244),
-      emissive: new THREE.Color(0x010108),
-      emissiveIntensity: 0.1
+      emissive: new THREE.Color(0x020210),
+      emissiveIntensity: 0.15
     });
     
     this._sphere = new THREE.Mesh(geometry, material);
