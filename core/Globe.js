@@ -16,7 +16,7 @@ export class Globe extends BaseComponent {
       description: '3D 地球模型，支持纹理贴图和交互',
       params: {
         radius: { type: 'number', default: 1 },
-        showAtmosphere: { type: 'boolean', default: true },
+        showAtmosphere: { type: 'boolean', default: false },
         showGraticule: { type: 'boolean', default: false },
         rotateSpeed: { type: 'number', default: 0.0005 }
       },
@@ -30,7 +30,7 @@ export class Globe extends BaseComponent {
   render(scene, params = {}) {
     this.params = {
       radius: 1,
-      showAtmosphere: true,
+      showAtmosphere: false,
       showGraticule: false,
       rotateSpeed: 0.0005,
       ...params
