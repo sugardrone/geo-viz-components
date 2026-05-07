@@ -1,0 +1,14 @@
+{
+  "name": "geo-viz-components",
+  "version": "0.1.0",
+  "description": "地理可视化组件库 - 标准化 Three.js 地理教学组件",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "cd demo && python3 -m http.server 8080",
+    "build": "echo 'TODO: add bundler'"
+  },
+  "dependencies": {
+    "three": "^0.170.0"
+  }
+}

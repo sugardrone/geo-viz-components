@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>地理可视化组件库 - Demo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      background: #0a0a1a; 
+      color: #fff; 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    #app { display: flex; height: 100vh; }
+    #sidebar { 
+      width: 360px; 
+      background: #111122; 
+      padding: 20px; 
+      overflow-y: auto;
+      border-right: 1px solid #333;
+    }
+    #globe-container { flex: 1; position: relative; }
+    h1 { font-size: 18px; margin-bottom: 16px; color: #4da6ff; }
+    h2 { font-size: 14px; margin: 16px 0 8px; color: #888; }
+    .demo-btn {
+      display: block;
+      width: 100%;
+      padding: 10px 12px;
+      margin: 4px 0;
+      background: #1a1a2e;
+      border: 1px solid #333;
+      color: #ddd;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: left;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+    .demo-btn:hover { background: #252540; border-color: #4da6ff; color: #fff; }
+    .demo-btn.active { background: #1a3a5c; border-color: #4da6ff; }
+    .info {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(0,0,0,0.8);
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      max-width: 400px;
+    }
+    .info h3 { color: #4da6ff; margin-bottom: 4px; }
+    .code-output {
+      background: #0d0d1a;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 12px;
+      margin-top: 12px;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 11px;
+      color: #4da6ff;
+      white-space: pre-wrap;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="sidebar">
+      <h1>🌍 地理可视化组件库</h1>
+      <p style="font-size:12px;color:#666;margin-bottom:16px">点击下方按钮加载不同组件</p>
+      
+      <h2>🌍 基础</h2>
+      <button class="demo-btn" data-demo="globe">旋转地球（基础场景）</button>
+      <button class="demo-btn" data-demo="globe_graticule">地球 + 经纬网</button>
+      
+      <h2>🌊 洋流</h2>
+      <button class="demo-btn" data-demo="humboldt">秘鲁寒流（寒流）</button>
+      <button class="demo-btn" data-demo="gulfstream">墨西哥湾暖流</button>
+      <button class="demo-btn" data-demo="kuroshio">日本暖流（黑潮）</button>
+      
+      <h2>🌤️ 气候</h2>
+      <button class="demo-btn" data-demo="mediterranean">地中海气候</button>
+      <button class="demo-btn" data-demo="monsoon">季风气候</button>
+      <button class="demo-btn" data-demo="climate_map">世界气候带</button>
+      
+      <h2>🏔️ 地形</h2>
+      <button class="demo-btn" data-demo="himalaya">喜马拉雅造山带</button>
+      <button class="demo-btn" data-demo="terrain_types">地形类型对比</button>
+      
+      <h2>🏙️ 城市</h2>
+      <button class="demo-btn" data-demo="chinese_cities">中国主要城市</button>
+      
+      <h2>🔗 组合</h2>
+      <button class="demo-btn" data-demo="humboldt_fishery">秘鲁寒流 → 渔业减产</button>
+      <button class="demo-btn" data-demo="full_demo">完整案例：气候-洋流-地形</button>
+      
+      <h2>📋 AI 输出 JSON</h2>
+      <div id="code-output" class="code-output">等待选择...</div>
+    </div>
+    
+    <div id="globe-container">
+      <div class="info" id="info-panel">
+        <h3>地理可视化组件库 v0.1</h3>
+        <p>Three.js 标准化地理教学组件</p>
+        <p style="margin-top:8px;font-size:11px;color:#888">鼠标拖拽旋转 · 滚轮缩放 · 右键平移</p>
+      </div>
+    </div>
+  </div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+  
+  <script type="module">
+    import { SceneManager, Globe, OceanCurrent, ClimateZone, Arrow, Label, Terrain, Wind, PlateTectonic, UrbanArea, COMPONENT_REGISTRY } from '../index.js';
+    
+    let sceneManager = null;
+    
+    const demos = {
+      globe: {
+        components: [],
+        info: '基础地球模型'
+      },
+      globe_graticule: {
+        components: [],
+        globeParams: { showGraticule: true },
+        info: '带经纬网的地球'
+      },
+      humboldt: {
+        components: [
+          { id: 'ocean_current', params: { 
+            path: [[-80,-45],[-78,-35],[-77,-25],[-76,-15],[-75,-5],[-73,0]],
+            type: 'cold', label: '秘鲁寒流', temperature: 12
+          }},
+          { id: 'label', params: { lat: -20, lng: -82, text: '秘鲁寒流', color: '#3498db' }},
+          { id: 'label', params: { lat: -15, lng: -75, text: '南美洲西岸', color: '#aaa' }}
+        ],
+        info: '秘鲁寒流：从高纬度流向低纬度的寒流，降温减湿'
+      },
+      gulfstream: {
+        components: [
+          { id: 'ocean_current', params: { 
+            path: [[-82,25],[-78,30],[-72,35],[-60,40],[-45,48],[-30,55],[-15,60]],
+            type: 'warm', label: '墨西哥湾暖流', temperature: 25
+          }},
+          { id: 'label', params: { lat: 35, lng: -50, text: '墨西哥湾暖流', color: '#e74c3c' }}
+        ],
+        info: '墨西哥湾暖流：世界最强暖流，从墨西哥湾流向北大西洋'
+      },
+      kuroshio: {
+        components: [
+          { id: 'ocean_current', params: { 
+            path: [[125,15],[127,20],[130,25],[135,30],[140,35],[145,40]],
+            type: 'warm', label: '黑潮', temperature: 24
+          }},
+          { id: 'label', params: { lat: 25, lng: 123, text: '黑潮（日本暖流）', color: '#e74c3c' }}
+        ],
+        info: '黑潮：北太平洋最强暖流，从菲律宾流向日本'
+      },
+      mediterranean: {
+        components: [
+          { id: 'climate_zone', params: { lat: 38, lng: 15, type: 'mediterranean', radius: 12 }},
+          { id: 'label', params: { lat: 42, lng: 12, text: '地中海', color: '#e74c3c' }},
+          { id: 'label', params: { lat: 35, lng: 18, text: '地中海气候', color: '#e74c3c' }}
+        ],
+        info: '地中海气候：夏季炎热干燥，冬季温和多雨'
+      },
+      monsoon: {
+        components: [
+          { id: 'climate_zone', params: { lat: 20, lng: 100, type: 'tropical_monsoon', radius: 15 }},
+          { id: 'climate_zone', params: { lat: 25, lng: 80, type: 'tropical_monsoon', radius: 12 }},
+          { id: 'wind', params: { path: [[80,5],[90,10],[100,15]], strength: 8, animated: true }},
+          { id: 'label', params: { lat: 25, lng: 90, text: '西南季风', color: '#aaa' }}
+        ],
+        info: '季风气候：受海陆热力差异影响，风向季节性反转'
+      },
+      climate_map: {
+        components: [
+          { id: 'climate_zone', params: { lat: 0, lng: 0, type: 'tropical_rainforest', radius: 10 }},
+          { id: 'climate_zone', params: { lat: 25, lng: 0, type: 'arid', radius: 10 }},
+          { id: 'climate_zone', params: { lat: 45, lng: 0, type: 'temperate_oceanic', radius: 10 }},
+          { id: 'climate_zone', params: { lat: -25, lng: 30, type: 'tropical_savanna', radius: 10 }},
+          { id: 'climate_zone', params: { lat: 65, lng: 0, type: 'subarctic', radius: 10 }},
+          { id: 'label', params: { lat: 0, lng: 0, text: '热带雨林', color: '#27ae60' }},
+          { id: 'label', params: { lat: 25, lng: 0, text: '热带沙漠', color: '#e67e22' }},
+          { id: 'label', params: { lat: 45, lng: 0, text: '温带海洋', color: '#3498db' }}
+        ],
+        info: '世界气候带分布：从赤道到两极的纬度地带性'
+      },
+      himalaya: {
+        components: [
+          { id: 'plate_tectonic', params: { 
+            boundary: [[70,28],[78,30],[85,28],[92,27],[98,28]],
+            type: 'convergent', plates: ['印度洋板块', '欧亚板块'], showMovement: true
+          }},
+          { id: 'terrain', params: { lat: 28, lng: 85, type: 'mountain', radius: 12 }},
+          { id: 'label', params: { lat: 28, lng: 85, text: '喜马拉雅山脉', color: '#fff' }},
+          { id: 'arrow', params: { from: [80, 20], to: [85, 28], label: '板块碰撞', altitude: 0.04 }}
+        ],
+        info: '喜马拉雅造山带：印度洋板块与欧亚板块碰撞形成'
+      },
+      terrain_types: {
+        components: [
+          { id: 'terrain', params: { lat: 40, lng: 80, type: 'mountain', radius: 8 }},
+          { id: 'terrain', params: { lat: 40, lng: 110, type: 'plain', radius: 8 }},
+          { id: 'terrain', params: { lat: 30, lng: 90, type: 'plateau', radius: 8 }},
+          { id: 'label', params: { lat: 40, lng: 80, text: '山地', color: '#8b4513' }},
+          { id: 'label', params: { lat: 40, lng: 110, text: '平原', color: '#2ecc71' }},
+          { id: 'label', params: { lat: 30, lng: 90, text: '高原', color: '#d35400' }}
+        ],
+        info: '地形类型对比：山地、平原、高原的分布特征'
+      },
+      chinese_cities: {
+        components: [
+          { id: 'urban_area', params: { 
+            cities: [
+              { name: '北京', lat: 39.9, lng: 116.4, population: 21540000 },
+              { name: '上海', lat: 31.2, lng: 121.5, population: 24870000 },
+              { name: '广州', lat: 23.1, lng: 113.3, population: 18680000 },
+              { name: '深圳', lat: 22.5, lng: 114.1, population: 17560000 },
+              { name: '成都', lat: 30.6, lng: 104.1, population: 16330000 },
+              { name: '武汉', lat: 30.6, lng: 114.3, population: 11100000 }
+            ],
+            showConnections: true, scaleByPopulation: true
+          }}
+        ],
+        info: '中国主要城市分布与规模'
+      },
+      humboldt_fishery: {
+        components: [
+          { id: 'ocean_current', params: { 
+            path: [[-80,-45],[-78,-35],[-77,-25],[-76,-15],[-75,-5]],
+            type: 'cold', temperature: 12
+          }},
+          { id: 'climate_zone', params: { lat: -15, lng: -75, type: 'arid', radius: 10, opacity: 0.3 }},
+          { id: 'arrow', params: { from: [-78, -30], to: [-75, -15], label: '降温减湿', altitude: 0.04 }},
+          { id: 'arrow', params: { from: [-75, -5], to: [-75, -15], label: '渔业减产', altitude: 0.04 }},
+          { id: 'label', params: { lat: -20, lng: -82, text: '秘鲁寒流', color: '#3498db' }},
+          { id: 'label', params: { lat: -15, lng: -70, text: '沿岸荒漠', color: '#e67e22' }}
+        ],
+        info: '秘鲁寒流 → 降温减湿 → 沿岸荒漠 → 渔业减产'
+      },
+      full_demo: {
+        components: [
+          { id: 'ocean_current', params: { 
+            path: [[-80,-45],[-78,-35],[-77,-25],[-76,-15],[-75,-5]],
+            type: 'cold', temperature: 12
+          }},
+          { id: 'climate_zone', params: { lat: -15, lng: -75, type: 'arid', radius: 12 }},
+          { id: 'terrain', params: { lat: -15, lng: -70, type: 'mountain', radius: 5 }},
+          { id: 'arrow', params: { from: [-78, -30], to: [-75, -15], label: '寒流影响' }},
+          { id: 'label', params: { lat: -20, lng: -82, text: '秘鲁寒流', color: '#3498db' }},
+          { id: 'label', params: { lat: -15, lng: -70, text: '安第斯山脉', color: '#8b4513' }},
+          { id: 'label', params: { lat: -15, lng: -75, text: '热带荒漠', color: '#e67e22' }}
+        ],
+        info: '完整案例：洋流 + 气候 + 地形 综合分析'
+      }
+    };
+    
+    // 清除并重新创建场景
+    function loadDemo(name) {
+      const demo = demos[name];
+      if (!demo) return;
+      
+      if (sceneManager) {
+        sceneManager.dispose();
+        sceneManager = null;
+      }
+      
+      const container = document.getElementById('globe-container');
+      sceneManager = new SceneManager(container, { backgroundColor: 0x000011 });
+      
+      // 加载地球（自定义参数）
+      const globe = new Globe();
+      sceneManager.addComponent(globe, demo.globeParams || {});
+      
+      // 加载组件
+      if (demo.components.length > 0) {
+        sceneManager.loadComponents(demo.components, COMPONENT_REGISTRY);
+      }
+      
+      sceneManager.start();
+      
+      // 更新信息面板
+      document.getElementById('info-panel').innerHTML = `
+        <h3>${name}</h3>
+        <p>${demo.info}</p>
+      `;
+      
+      // 显示 JSON
+      document.getElementById('code-output').textContent = 
+        JSON.stringify(demo.components, null, 2);
+      
+      // 高亮按钮
+      document.querySelectorAll('.demo-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector(`[data-demo="${name}"]`)?.classList.add('active');
+    }
+    
+    // 绑定按钮事件
+    document.querySelectorAll('.demo-btn').forEach(btn => {
+      btn.addEventListener('click', () => loadDemo(btn.dataset.demo));
+    });
+    
+    // 默认加载第一个 demo
+    loadDemo('humboldt_fishery');
+  </script>
+</body>
+</html>
