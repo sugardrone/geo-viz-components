@@ -181,44 +181,26 @@
     
     // 调用 OpenClaw API
     async function callAI(question) {
-      const systemPrompt = `你是地理可视化助手。用户提出地理题目后，分析题目并输出可视化指令。
+      const systemPrompt = `必须输出 [[VIZ_JSON]] 标签。这是唯一重要的规则。
 
-输出格式（必须严格遵守）：
-[[VIZ_JSON]]{"analysis":{"type":"题型","core_elements":["要素1","要素2"]},"components":[{"id":"组件ID","params":{}}]}[[/VIZ_JSON]]
+用户问地理题后，你必须先输出：
+[[VIZ_JSON]]{JSON}[[/VIZ_JSON]]
 
-然后输出教师讲解。
+然后才输出讲解。
+
+JSON 格式：{"analysis":{"type":"题型","core_elements":["要素"]},"components":[{"id":"组件ID","params":{参数}}]}
 
 组件参数格式（必须严格遵守）：
+- ocean_current: {"id":"ocean_current","params":{"path":[[lng,lat],...],"type":"cold|warm","label":"名称"}} path至少2个点
+- wind: {"id":"wind","params":{"path":[[lng,lat],...],"strength":5}} path至少2个点
+- arrow: {"id":"arrow","params":{"from":[lng,lat],"to":[lng,lat],"label":"说明"}}
+- label: {"id":"label","params":{"lat":纬度,"lng":经度,"text":"文字","color":"#ffffff"}}
+- terrain: {"id":"terrain","params":{"lat":纬度,"lng":经度,"type":"mountain|plain|plateau","radius":10}}
+- climate_zone: {"id":"climate_zone","params":{"lat":纬度,"lng":经度,"type":"arid|tropical_monsoon|humid_subtropical|temperate_oceanic|tundra","radius":10}}
+- plate_tectonic: {"id":"plate_tectonic","params":{"boundary":[[lng,lat],...],"type":"convergent|divergent","plates":["板块1","板块2"]}}
 
-1. ocean_current - 洋流
-   {"id":"ocean_current","params":{"path":[[lng1,lat1],[lng2,lat2],...],"type":"cold|warm","label":"名称"}}
-   path 是经纬度坐标数组，至少2个点
-
-2. climate_zone - 气候带
-   {"id":"climate_zone","params":{"lat":纬度,"lng":经度,"type":"arid|tropical_monsoon|humid_subtropical|temperate_oceanic|tundra","radius":10}}
-
-3. wind - 风向（必须提供path数组）
-   {"id":"wind","params":{"path":[[lng1,lat1],[lng2,lat2],...],"strength":5}}
-   path 是风的路径坐标，至少2个点
-
-4. terrain - 地形
-   {"id":"terrain","params":{"lat":纬度,"lng":经度,"type":"mountain|plain|plateau","radius":10}}
-
-5. plate_tectonic - 板块边界
-   {"id":"plate_tectonic","params":{"boundary":[[lng1,lat1],[lng2,lat2],...],"type":"convergent|divergent","plates":["板块1","板块2"]}}
-
-6. arrow - 因果箭头
-   {"id":"arrow","params":{"from":[lng1,lat1],"to":[lng2,lat2],"label":"说明"}}
-
-7. label - 文字标注
-   {"id":"label","params":{"lat":纬度,"lng":经度,"text":"文字","color":"#ffffff"}}
-
-洋流路径参考：
-- 秘鲁寒流: [[-80,0],[-82,-5],[-82,-10],[-80,-15],[-78,-20],[-76,-25]]
-- 墨西哥湾暖流: [[-82,25],[-78,30],[-72,35],[-60,40],[-45,48]]
-- 黑潮: [[125,15],[127,20],[130,25],[135,30],[140,35]]
-
-城市坐标：北京[116.4,39.9] 上海[121.5,31.2] 东京[139.7,35.7]`;
+洋流路径参考：秘鲁寒流:[[-80,0],[-82,-5],[-82,-10],[-80,-15],[-78,-20],[-76,-25]] 墨西哥湾暖流:[[-82,25],[-78,30],[-72,35],[-60,40],[-45,48]] 黑潮:[[125,15],[127,20],[130,25],[135,30],[140,35]]
+城市坐标：北京[116.4,39.9] 上海[121.5,31.2]`;
 
       try {
         const response = await fetch(`${API_BASE}/v1/chat/completions`, {
