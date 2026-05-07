@@ -63,8 +63,9 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // 静态文件
-  let filePath = req.url === '/' ? '/demo/agent.html' : req.url;
+  // 静态文件（去掉 query string）
+  const urlPath = req.url.split('?')[0];
+  let filePath = urlPath === '/' ? '/demo/agent.html' : urlPath;
   filePath = path.join(__dirname, filePath);
   
   fs.stat(filePath, (err, stats) => {
