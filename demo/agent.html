@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>地理可视化 Agent</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0a1a; color: #fff; font-family: -apple-system, sans-serif; }
+    #app { display: flex; height: 100vh; }
+    #chat { 
+      width: 400px; 
+      background: #111122; 
+      display: flex; 
+      flex-direction: column;
+      border-right: 1px solid #333;
+    }
+    #chat-header { 
+      padding: 16px; 
+      border-bottom: 1px solid #333;
+      font-size: 16px;
+      color: #4da6ff;
+    }
+    #chat-messages { 
+      flex: 1; 
+      overflow-y: auto; 
+      padding: 16px;
+    }
+    .msg { 
+      margin: 8px 0; 
+      padding: 10px 14px; 
+      border-radius: 8px; 
+      font-size: 13px; 
+      line-height: 1.6;
+      max-width: 90%;
+    }
+    .msg.user { 
+      background: #1a3a5c; 
+      margin-left: auto;
+      border-bottom-right-radius: 2px;
+    }
+    .msg.ai { 
+      background: #1a1a2e; 
+      border: 1px solid #333;
+      border-bottom-left-radius: 2px;
+    }
+    .msg pre { 
+      background: #0d0d1a; 
+      padding: 8px; 
+      border-radius: 4px; 
+      overflow-x: auto;
+      font-size: 11px;
+      margin-top: 8px;
+    }
+    #chat-input {
+      padding: 12px 16px;
+      border-top: 1px solid #333;
+      display: flex;
+      gap: 8px;
+    }
+    #chat-input input {
+      flex: 1;
+      padding: 10px;
+      background: #1a1a2e;
+      border: 1px solid #333;
+      color: #fff;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    #chat-input button {
+      padding: 10px 16px;
+      background: #4da6ff;
+      border: none;
+      color: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    #viz-container { flex: 1; position: relative; }
+    .viz-label {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      background: rgba(0,0,0,0.7);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #4da6ff;
+    }
+    .error-msg { color: #e74c3c; font-size: 11px; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="chat">
+      <div id="chat-header">🌍 地理可视化 Agent</div>
+      <div id="chat-messages"></div>
+      <div id="chat-input">
+        <input type="text" id="input" placeholder="输入地理题目..." />
+        <button id="send">发送</button>
+      </div>
+    </div>
+    <div id="viz-container">
+      <div class="viz-label">Three.js 可视化</div>
+    </div>
+  </div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+  
+  <script type="module">
+    import { SceneManager, Globe, COMPONENT_REGISTRY } from '../index.js';
+    
+    let scene = null;
+    const messages = document.getElementById('chat-messages');
+    const input = document.getElementById('input');
+    
+    // 初始化 Three.js 场景
+    function initScene() {
+      const container = document.getElementById('viz-container');
+      scene = new SceneManager(container, { backgroundColor: 0x000011 });
+      const globe = new Globe();
+      scene.addComponent(globe, {});
+      scene.start();
+    }
+    
+    // 添加消息到聊天
+    function addMessage(text, type = 'ai') {
+      const div = document.createElement('div');
+      div.className = `msg ${type}`;
+      div.textContent = text;
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+      return div;
+    }
+    
+    // 解析并渲染 VIZ_JSON
+    function parseAndRender(text) {
+      const match = text.match(/\[\[VIZ_JSON\]\]([\s\S]*?)\[\[\/VIZ_JSON\]\]/);
+      if (!match) return false;
+      
+      try {
+        const data = JSON.parse(match[1]);
+        if (data.components) {
+          // 清除旧组件
+          for (const [id, comp] of [...scene.components]) {
+            if (comp.metadata.id !== 'globe') {
+              scene.removeComponent(id);
+            }
+          }
+          
+          // 加载新组件
+          const loaded = scene.loadComponents(data.components, COMPONENT_REGISTRY);
+          
+          // 显示分析信息
+          if (data.analysis) {
+            addMessage(`📊 分析：${data.analysis.type} | 要素：${data.analysis.core_elements.join('、')}`);
+          }
+          addMessage(`✅ 已加载 ${loaded.length} 个可视化组件`);
+          
+          // 更新可视化标签
+          document.querySelector('.viz-label').textContent = 
+            data.analysis?.core_elements?.join(' + ') || 'Three.js 可视化';
+          
+          return true;
+        }
+      } catch (e) {
+        addMessage(`❌ JSON 解析失败: ${e.message}`, 'error-msg');
+      }
+      return false;
+    }
+    
+    // 模拟 AI 响应（实际应接入 OpenClaw API）
+    function simulateAI(question) {
+      // 简单的关键词匹配
+      const q = question.toLowerCase();
+      
+      if (q.includes('秘鲁') || q.includes('寒流') || q.includes('渔')) {
+        return {
+          analysis: { type: '原因类', core_elements: ['秘鲁寒流', '渔业'] },
+          components: [
+            { id: 'ocean_current', params: { 
+              path: [[-80,-45],[-78,-35],[-77,-25],[-76,-15],[-75,-5],[-73,0]],
+              type: 'cold', label: '秘鲁寒流', temperature: 12
+            }},
+            { id: 'climate_zone', params: { lat: -15, lng: -75, type: 'arid', radius: 10 }},
+            { id: 'arrow', params: { from: [-78,-30], to: [-75,-15], label: '降温减湿', altitude: 0.04 }},
+            { id: 'label', params: { lat: -20, lng: -82, text: '秘鲁寒流', color: '#3498db' }},
+            { id: 'label', params: { lat: -15, lng: -70, text: '安第斯山脉', color: '#8b4513' }}
+          ]
+        };
+      }
+      
+      if (q.includes('季风') || q.includes('印度') || q.includes('亚洲')) {
+        return {
+          analysis: { type: '特征描述类', core_elements: ['季风气候', '风向'] },
+          components: [
+            { id: 'climate_zone', params: { lat: 20, lng: 100, type: 'tropical_monsoon', radius: 15 }},
+            { id: 'wind', params: { path: [[80,5],[90,10],[100,15]], strength: 8 }},
+            { id: 'label', params: { lat: 25, lng: 90, text: '西南季风', color: '#aaa' }}
+          ]
+        };
+      }
+      
+      if (q.includes('板块') || q.includes('地震') || q.includes('火山') || q.includes('喜马拉雅')) {
+        return {
+          analysis: { type: '过程分析类', core_elements: ['板块构造', '造山运动'] },
+          components: [
+            { id: 'plate_tectonic', params: { 
+              boundary: [[70,28],[78,30],[85,28],[92,27],[98,28]],
+              type: 'convergent', plates: ['印度洋板块', '欧亚板块']
+            }},
+            { id: 'terrain', params: { lat: 28, lng: 85, type: 'mountain', radius: 12 }},
+            { id: 'arrow', params: { from: [80,20], to: [85,28], label: '板块碰撞', altitude: 0.04 }},
+            { id: 'label', params: { lat: 28, lng: 85, text: '喜马拉雅山脉', color: '#fff' }}
+          ]
+        };
+      }
+      
+      return null;
+    }
+    
+    // 发送消息
+    async function sendMessage() {
+      const text = input.value.trim();
+      if (!text) return;
+      
+      input.value = '';
+      addMessage(text, 'user');
+      
+      // 模拟 AI 处理
+      setTimeout(() => {
+        const result = simulateAI(text);
+        
+        if (result) {
+          const vizJson = `[[VIZ_JSON]]\n${JSON.stringify(result, null, 2)}\n[[/VIZ_JSON]]`;
+          
+          const explanation = `📋 **题目分析**\n\n题型：${result.analysis.type}\n核心要素：${result.analysis.core_elements.join('、')}\n\n已加载可视化组件，请查看右侧 3D 地球。`;
+          
+          addMessage(explanation);
+          
+          // 渲染可视化
+          parseAndRender(vizJson);
+        } else {
+          addMessage('目前只支持：秘鲁寒流、季风气候、板块构造等经典案例。完整题库正在建设中。');
+        }
+      }, 500);
+    }
+    
+    // 事件绑定
+    document.getElementById('send').addEventListener('click', sendMessage);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+    
+    // 初始化
+    initScene();
+    addMessage('🌍 地理可视化 Agent 已就绪。\n\n输入地理题目，我会自动匹配可视化组件并讲解。\n\n试试：\n• 秘鲁寒流为什么导致渔业减产\n• 亚洲季风气候的成因\n• 喜马拉雅山脉是怎么形成的');
+  </script>
+</body>
+</html>
