@@ -181,26 +181,14 @@
     
     // 调用 OpenClaw API
     async function callAI(question) {
-      const systemPrompt = `你是地理可视化助手。用户提出地理题目后：
+      // 不设 system prompt，让 OpenClaw agent 自动调用 geo_tutor skill
+      // agent 会读取 skill 的 SKILL.md 和 refs/ 知识库
+      const systemPrompt = `用户是高中生，问地理题。你必须：
+1. 先输出 [[VIZ_JSON]] 标签包裹的可视化 JSON
+2. 再输出教师讲解（简洁口语化，不用##符号）
 
-1. 先输出可视化指令：
-[[VIZ_JSON]]{"analysis":{"type":"题型","core_elements":["要素"]},"components":[{"id":"组件ID","params":{参数}}]}[[/VIZ_JSON]]
-
-2. 然后输出教师讲解（不用 ## 符号，简洁口语化，像老师面对面讲题）
-
-组件参数（严格遵守）：
-- ocean_current: {"id":"ocean_current","params":{"path":[[lng,lat],...],"type":"cold|warm","label":"名称"}} path至少2个点
-- wind: {"id":"wind","params":{"path":[[lng,lat],...],"strength":5}} path至少2个点
-- arrow: {"id":"arrow","params":{"from":[lng,lat],"to":[lng,lat],"label":"说明"}}
-- label: {"id":"label","params":{"lat":纬度,"lng":经度,"text":"文字","color":"#ffffff"}}
-- terrain: {"id":"terrain","params":{"lat":纬度,"lng":经度,"type":"mountain|plain|plateau","radius":10}}
-- climate_zone: {"id":"climate_zone","params":{"lat":纬度,"lng":经度,"type":"arid|tropical_monsoon|humid_subtropical|temperate_oceanic|tundra","radius":10}}
-- plate_tectonic: {"id":"plate_tectonic","params":{"boundary":[[lng,lat],...],"type":"convergent|divergent","plates":["板块1","板块2"]}}
-
-秘鲁寒流(南→北):[[-76,-40],[-76,-30],[-76,-20],[-76,-10],[-76,-2]]
-墨西哥湾暖流:[[-82,25],[-78,30],[-72,35],[-60,40],[-45,48]]
-黑潮:[[125,15],[127,20],[130,25],[135,30],[140,35]]
-北京[116.4,39.9] 上海[121.5,31.2]`;
+组件：ocean_current(path+type+label), wind(path+strength), arrow(from+to+label), label(lat+lng+text+color), terrain(lat+lng+type+radius), climate_zone(lat+lng+type+radius), plate_tectonic(boundary+type+plates)
+秘鲁寒流(南→北):[[-76,-40],[-76,-30],[-76,-20],[-76,-10],[-76,-2]]`;
 
       try {
         const response = await fetch(`${API_BASE}/v1/chat/completions`, {
