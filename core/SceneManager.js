@@ -65,16 +65,16 @@ export class SceneManager {
 
   _setupLights() {
     // 环境光
-    const ambient = new THREE.AmbientLight(0x333344, 0.6);
+    const ambient = new THREE.AmbientLight(0x444455, 0.8);
     this.scene.add(ambient);
     
     // 主光源（模拟太阳）
-    const sun = new THREE.DirectionalLight(0xffffff, 1.5);
+    const sun = new THREE.DirectionalLight(0xffffff, 2.0);
     sun.position.set(5, 3, 5);
     this.scene.add(sun);
     
     // 补光
-    const fill = new THREE.DirectionalLight(0x6688aa, 0.4);
+    const fill = new THREE.DirectionalLight(0x8899bb, 0.6);
     fill.position.set(-3, -1, -3);
     this.scene.add(fill);
   }
