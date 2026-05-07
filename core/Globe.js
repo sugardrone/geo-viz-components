@@ -136,8 +136,8 @@ export class Globe extends BaseComponent {
   }
 
   _createAtmosphere() {
-    // 内层大气（蓝色光晕）
-    const geometry = new THREE.SphereGeometry(this.radius * 1.015, 128, 128);
+    // 微弱的边缘光晕
+    const geometry = new THREE.SphereGeometry(this.radius * 1.01, 64, 64);
     const material = new THREE.ShaderMaterial({
       vertexShader: `
         varying vec3 vNormal;
@@ -154,8 +154,8 @@ export class Globe extends BaseComponent {
         void main() {
           vec3 viewDir = normalize(-vPosition);
           float rim = 1.0 - max(0.0, dot(viewDir, vNormal));
-          float intensity = pow(rim, 3.0) * 0.8;
-          vec3 color = mix(vec3(0.1, 0.4, 0.8), vec3(0.2, 0.6, 1.0), rim);
+          float intensity = pow(rim, 4.0) * 0.3;
+          vec3 color = vec3(0.3, 0.6, 1.0);
           gl_FragColor = vec4(color, intensity);
         }
       `,
@@ -166,31 +166,6 @@ export class Globe extends BaseComponent {
     });
     this._atmosphere = new THREE.Mesh(geometry, material);
     this.group.add(this._atmosphere);
-    
-    // 外层辉光
-    const glowGeometry = new THREE.SphereGeometry(this.radius * 1.08, 64, 64);
-    const glowMaterial = new THREE.ShaderMaterial({
-      vertexShader: `
-        varying vec3 vNormal;
-        void main() {
-          vNormal = normalize(normalMatrix * normal);
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        varying vec3 vNormal;
-        void main() {
-          float intensity = pow(0.65 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 4.0);
-          gl_FragColor = vec4(0.3, 0.6, 1.0, 1.0) * intensity * 0.4;
-        }
-      `,
-      transparent: true,
-      side: THREE.BackSide,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending
-    });
-    this._glow = new THREE.Mesh(glowGeometry, glowMaterial);
-    this.group.add(this._glow);
   }
 
   _createGraticule() {
