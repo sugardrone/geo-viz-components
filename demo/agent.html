@@ -181,29 +181,44 @@
     
     // 调用 OpenClaw API
     async function callAI(question) {
-      const systemPrompt = `你是地理可视化助手。用户会提出地理题目，你需要：
-1. 分析题目，提取核心地理要素
-2. 决定需要哪些可视化组件
-3. 输出 JSON 格式的可视化指令
-
-可用组件：ocean_current(洋流), climate_zone(气候带), wind(风向), terrain(地形), plate_tectonic(板块), urban_area(城市), arrow(因果箭头), label(标注)
+      const systemPrompt = `你是地理可视化助手。用户提出地理题目后，分析题目并输出可视化指令。
 
 输出格式（必须严格遵守）：
-[[VIZ_JSON]]
-{"analysis":{"type":"题型","core_elements":["要素1","要素2"]},"components":[{"id":"组件ID","params":{...}}]}
-[[/VIZ_JSON]]
+[[VIZ_JSON]]{"analysis":{"type":"题型","core_elements":["要素1","要素2"]},"components":[{"id":"组件ID","params":{}}]}[[/VIZ_JSON]]
 
 然后输出教师讲解。
 
-洋流路径参考：
-- 秘鲁寒流: [[-80,-45],[-78,-35],[-77,-25],[-76,-15],[-75,-5],[-73,0]]
-- 墨西哥湾暖流: [[-82,25],[-78,30],[-72,35],[-60,40],[-45,48],[-30,55],[-15,60]]
-- 黑潮: [[125,15],[127,20],[130,25],[135,30],[140,35],[145,40]]
+组件参数格式（必须严格遵守）：
 
-城市坐标参考：
-- 北京: [116.4, 39.9]
-- 上海: [121.5, 31.2]
-- 东京: [139.7, 35.7]`;
+1. ocean_current - 洋流
+   {"id":"ocean_current","params":{"path":[[lng1,lat1],[lng2,lat2],...],"type":"cold|warm","label":"名称"}}
+   path 是经纬度坐标数组，至少2个点
+
+2. climate_zone - 气候带
+   {"id":"climate_zone","params":{"lat":纬度,"lng":经度,"type":"arid|tropical_monsoon|humid_subtropical|temperate_oceanic|tundra","radius":10}}
+
+3. wind - 风向（必须提供path数组）
+   {"id":"wind","params":{"path":[[lng1,lat1],[lng2,lat2],...],"strength":5}}
+   path 是风的路径坐标，至少2个点
+
+4. terrain - 地形
+   {"id":"terrain","params":{"lat":纬度,"lng":经度,"type":"mountain|plain|plateau","radius":10}}
+
+5. plate_tectonic - 板块边界
+   {"id":"plate_tectonic","params":{"boundary":[[lng1,lat1],[lng2,lat2],...],"type":"convergent|divergent","plates":["板块1","板块2"]}}
+
+6. arrow - 因果箭头
+   {"id":"arrow","params":{"from":[lng1,lat1],"to":[lng2,lat2],"label":"说明"}}
+
+7. label - 文字标注
+   {"id":"label","params":{"lat":纬度,"lng":经度,"text":"文字","color":"#ffffff"}}
+
+洋流路径参考：
+- 秘鲁寒流: [[-80,0],[-82,-5],[-82,-10],[-80,-15],[-78,-20],[-76,-25]]
+- 墨西哥湾暖流: [[-82,25],[-78,30],[-72,35],[-60,40],[-45,48]]
+- 黑潮: [[125,15],[127,20],[130,25],[135,30],[140,35]]
+
+城市坐标：北京[116.4,39.9] 上海[121.5,31.2] 东京[139.7,35.7]`;
 
       try {
         const response = await fetch(`${API_BASE}/v1/chat/completions`, {
