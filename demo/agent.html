@@ -176,54 +176,57 @@
       return false;
     }
     
-    // 模拟 AI 响应（实际应接入 OpenClaw API）
-    function simulateAI(question) {
-      // 简单的关键词匹配
-      const q = question.toLowerCase();
-      
-      if (q.includes('秘鲁') || q.includes('寒流') || q.includes('渔')) {
-        return {
-          analysis: { type: '原因类', core_elements: ['秘鲁寒流', '渔业'] },
-          components: [
-            { id: 'ocean_current', params: { 
-              path: [[-80,-45],[-78,-35],[-77,-25],[-76,-15],[-75,-5],[-73,0]],
-              type: 'cold', label: '秘鲁寒流', temperature: 12
-            }},
-            { id: 'climate_zone', params: { lat: -15, lng: -75, type: 'arid', radius: 10 }},
-            { id: 'arrow', params: { from: [-78,-30], to: [-75,-15], label: '降温减湿', altitude: 0.04 }},
-            { id: 'label', params: { lat: -20, lng: -82, text: '秘鲁寒流', color: '#3498db' }},
-            { id: 'label', params: { lat: -15, lng: -70, text: '安第斯山脉', color: '#8b4513' }}
-          ]
-        };
+    // API 配置
+    const API_BASE = window.location.hostname === 'localhost' 
+      ? 'http://localhost:3000' 
+      : 'http://YOUR_VPS_IP:3000'; // 部署时替换为 VPS 公网 IP
+    
+    // 调用 OpenClaw API
+    async function callAI(question) {
+      const systemPrompt = `你是地理可视化助手。用户会提出地理题目，你需要：
+1. 分析题目，提取核心地理要素
+2. 决定需要哪些可视化组件
+3. 输出 JSON 格式的可视化指令
+
+可用组件：ocean_current(洋流), climate_zone(气候带), wind(风向), terrain(地形), plate_tectonic(板块), urban_area(城市), arrow(因果箭头), label(标注)
+
+输出格式（必须严格遵守）：
+[[VIZ_JSON]]
+{"analysis":{"type":"题型","core_elements":["要素1","要素2"]},"components":[{"id":"组件ID","params":{...}}]}
+[[/VIZ_JSON]]
+
+然后输出教师讲解。
+
+洋流路径参考：
+- 秘鲁寒流: [[-80,-45],[-78,-35],[-77,-25],[-76,-15],[-75,-5],[-73,0]]
+- 墨西哥湾暖流: [[-82,25],[-78,30],[-72,35],[-60,40],[-45,48],[-30,55],[-15,60]]
+- 黑潮: [[125,15],[127,20],[130,25],[135,30],[140,35],[145,40]]
+
+城市坐标参考：
+- 北京: [116.4, 39.9]
+- 上海: [121.5, 31.2]
+- 东京: [139.7, 35.7]`;
+
+      try {
+        const response = await fetch(`${API_BASE}/v1/chat/completions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'openclaw:main',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: question }
+            ],
+            stream: false
+          })
+        });
+        
+        const data = await response.json();
+        return data.choices?.[0]?.message?.content || null;
+      } catch (e) {
+        console.error('API 调用失败:', e);
+        return null;
       }
-      
-      if (q.includes('季风') || q.includes('印度') || q.includes('亚洲')) {
-        return {
-          analysis: { type: '特征描述类', core_elements: ['季风气候', '风向'] },
-          components: [
-            { id: 'climate_zone', params: { lat: 20, lng: 100, type: 'tropical_monsoon', radius: 15 }},
-            { id: 'wind', params: { path: [[80,5],[90,10],[100,15]], strength: 8 }},
-            { id: 'label', params: { lat: 25, lng: 90, text: '西南季风', color: '#aaa' }}
-          ]
-        };
-      }
-      
-      if (q.includes('板块') || q.includes('地震') || q.includes('火山') || q.includes('喜马拉雅')) {
-        return {
-          analysis: { type: '过程分析类', core_elements: ['板块构造', '造山运动'] },
-          components: [
-            { id: 'plate_tectonic', params: { 
-              boundary: [[70,28],[78,30],[85,28],[92,27],[98,28]],
-              type: 'convergent', plates: ['印度洋板块', '欧亚板块']
-            }},
-            { id: 'terrain', params: { lat: 28, lng: 85, type: 'mountain', radius: 12 }},
-            { id: 'arrow', params: { from: [80,20], to: [85,28], label: '板块碰撞', altitude: 0.04 }},
-            { id: 'label', params: { lat: 28, lng: 85, text: '喜马拉雅山脉', color: '#fff' }}
-          ]
-        };
-      }
-      
-      return null;
     }
     
     // 发送消息
@@ -234,23 +237,28 @@
       input.value = '';
       addMessage(text, 'user');
       
-      // 模拟 AI 处理
-      setTimeout(() => {
-        const result = simulateAI(text);
+      const thinking = addMessage('🤔 分析中...');
+      
+      const reply = await callAI(text);
+      
+      if (reply) {
+        thinking.textContent = '';
         
-        if (result) {
-          const vizJson = `[[VIZ_JSON]]\n${JSON.stringify(result, null, 2)}\n[[/VIZ_JSON]]`;
-          
-          const explanation = `📋 **题目分析**\n\n题型：${result.analysis.type}\n核心要素：${result.analysis.core_elements.join('、')}\n\n已加载可视化组件，请查看右侧 3D 地球。`;
-          
-          addMessage(explanation);
-          
-          // 渲染可视化
-          parseAndRender(vizJson);
-        } else {
-          addMessage('目前只支持：秘鲁寒流、季风气候、板块构造等经典案例。完整题库正在建设中。');
+        // 解析 VIZ_JSON
+        const hasViz = parseAndRender(reply);
+        
+        // 显示文字部分（去掉 VIZ_JSON 标签）
+        const textOnly = reply.replace(/\[\[VIZ_JSON\]\][\s\S]*?\[\[\/VIZ_JSON\]\]/g, '').trim();
+        if (textOnly) {
+          addMessage(textOnly);
         }
-      }, 500);
+        
+        if (!hasViz) {
+          addMessage('（未生成可视化，请尝试更具体的地理题目）');
+        }
+      } else {
+        thinking.textContent = '❌ 连接失败。请确认 API 代理已启动，且 VPS 防火墙开放 3000 端口。';
+      }
     }
     
     // 事件绑定
