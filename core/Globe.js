@@ -51,7 +51,7 @@ export class Globe extends BaseComponent {
   _createSphere() {
     const geometry = new THREE.SphereGeometry(this.radius, 64, 64);
     
-    // 先用纯色材质确保 3D 渲染正常
+    // 先用纯色确保 3D 渲染正常
     const material = new THREE.MeshPhongMaterial({
       color: 0x2266aa,
       shininess: 25,
@@ -61,25 +61,31 @@ export class Globe extends BaseComponent {
     this._sphere = new THREE.Mesh(geometry, material);
     this.group.add(this._sphere);
     
-    // 然后异步加载纹理替换
-    this._loadTexture(material);
+    // 加载纹理
+    const loader = new THREE.TextureLoader();
+    loader.load('/vendor/earth_texture.jpg', (texture) => {
+      material.map = texture;
+      material.needsUpdate = true;
+      console.log('纹理加载成功');
+    }, undefined, (err) => {
+      console.error('纹理加载失败:', err);
+      // 回退到程序化纹理
+      this._fallbackTexture(material);
+    });
     
     this._createGraticuleLines();
   }
   
-  _loadTexture(material) {
-    // 程序化生成地球纹理
+  _fallbackTexture(material) {
     const canvas = document.createElement('canvas');
     canvas.width = 1024;
     canvas.height = 512;
     const ctx = canvas.getContext('2d');
     
-    // 海洋
     ctx.fillStyle = '#0d2847';
     ctx.fillRect(0, 0, 1024, 512);
     
     const mc = (lng, lat) => [(lng + 180) / 360 * 1024, (90 - lat) / 180 * 512];
-    
     const land = (coords, color) => {
       ctx.beginPath();
       ctx.moveTo(coords[0][0], coords[0][1]);
@@ -89,24 +95,15 @@ export class Globe extends BaseComponent {
       ctx.fill();
     };
     
-    // 欧亚
     land([mc(-10,70),mc(20,60),mc(50,50),mc(80,42),mc(110,35),mc(130,35),mc(145,50),mc(140,65),mc(100,72),mc(50,70),mc(0,72),mc(-10,70)], '#1a7b2a');
-    // 非洲
     land([mc(-15,37),mc(10,35),mc(30,22),mc(50,2),mc(42,-15),mc(25,-34),mc(12,-25),mc(5,5),mc(-12,15),mc(-15,37)], '#2a8b1a');
-    // 北美
     land([mc(-170,68),mc(-120,60),mc(-80,48),mc(-68,44),mc(-85,30),mc(-115,30),mc(-135,52),mc(-170,68)], '#1e8b22');
-    // 南美
     land([mc(-80,12),mc(-50,0),mc(-40,-15),mc(-55,-35),mc(-72,-50),mc(-62,-42),mc(-70,-15),mc(-80,12)], '#1a9b20');
-    // 澳大利亚
     land([mc(115,-12),mc(150,-20),mc(148,-36),mc(120,-34),mc(113,-18),mc(115,-12)], '#3a9b15');
-    // 格陵兰
-    land([mc(-55,60),mc(-20,75),mc(-50,82),mc(-60,72),mc(-55,60)], '#b0c8e0');
-    // 南极
     ctx.fillStyle = '#d0e0f0';
     ctx.fillRect(0, 460, 1024, 52);
     
-    const texture = new THREE.CanvasTexture(canvas);
-    material.map = texture;
+    material.map = new THREE.CanvasTexture(canvas);
     material.needsUpdate = true;
   }
 
