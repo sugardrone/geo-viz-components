@@ -124,13 +124,10 @@
     // 初始化 Three.js 场景
     function initScene() {
       const container = document.getElementById('viz-container');
-      console.log('Container size:', container.clientWidth, container.clientHeight);
       scene = new SceneManager(container, { backgroundColor: 0x000011 });
-      console.log('Canvas size:', scene.renderer.domElement.width, scene.renderer.domElement.height);
       const globe = new Globe();
       scene.addComponent(globe, {});
       scene.start();
-      console.log('Scene started, components:', scene.components.size);
     }
     
     // 添加消息到聊天

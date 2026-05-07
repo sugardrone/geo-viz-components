@@ -113,48 +113,48 @@ export class Globe extends BaseComponent {
     ];
     
     // 欧亚大陆
-    drawContinent([
-      [mapCoord(-10, 70), mapCoord(0, 60), mapCoord(30, 55), mapCoord(50, 50),
-       mapCoord(70, 45), mapCoord(90, 40), mapCoord(110, 35), mapCoord(120, 30),
-       mapCoord(130, 35), mapCoord(140, 40), mapCoord(145, 50), mapCoord(140, 60),
-       mapCoord(120, 65), mapCoord(100, 70), mapCoord(80, 72), mapCoord(60, 68),
-       mapCoord(40, 65), mapCoord(20, 68), mapCoord(0, 72), mapCoord(-10, 70)]
-    ].map(p => p[0]), '#1a5c2a', '#0d3318');
+    drawContinent([[
+      mapCoord(-10, 70), mapCoord(0, 60), mapCoord(30, 55), mapCoord(50, 50),
+      mapCoord(70, 45), mapCoord(90, 40), mapCoord(110, 35), mapCoord(120, 30),
+      mapCoord(130, 35), mapCoord(140, 40), mapCoord(145, 50), mapCoord(140, 60),
+      mapCoord(120, 65), mapCoord(100, 70), mapCoord(80, 72), mapCoord(60, 68),
+      mapCoord(40, 65), mapCoord(20, 68), mapCoord(0, 72), mapCoord(-10, 70)
+    ]], '#1a5c2a', '#0d3318');
     
     // 非洲
-    drawContinent([
-      [mapCoord(-15, 35), mapCoord(0, 37), mapCoord(10, 35), mapCoord(15, 30),
-       mapCoord(20, 25), mapCoord(35, 20), mapCoord(42, 12), mapCoord(50, 5),
-       mapCoord(48, -5), mapCoord(42, -15), mapCoord(35, -25), mapCoord(28, -33),
-       mapCoord(18, -35), mapCoord(12, -28), mapCoord(10, -15), mapCoord(5, 0),
-       mapCoord(-5, 5), mapCoord(-10, 10), mapCoord(-15, 15), mapCoord(-18, 22),
-       mapCoord(-15, 35)]
-    ].map(p => p[0]), '#2a6b1a', '#1a4a12');
+    drawContinent([[
+      mapCoord(-15, 35), mapCoord(0, 37), mapCoord(10, 35), mapCoord(15, 30),
+      mapCoord(20, 25), mapCoord(35, 20), mapCoord(42, 12), mapCoord(50, 5),
+      mapCoord(48, -5), mapCoord(42, -15), mapCoord(35, -25), mapCoord(28, -33),
+      mapCoord(18, -35), mapCoord(12, -28), mapCoord(10, -15), mapCoord(5, 0),
+      mapCoord(-5, 5), mapCoord(-10, 10), mapCoord(-15, 15), mapCoord(-18, 22),
+      mapCoord(-15, 35)
+    ]], '#2a6b1a', '#1a4a12');
     
     // 北美
-    drawContinent([
-      [mapCoord(-170, 65), mapCoord(-160, 60), mapCoord(-140, 62), mapCoord(-120, 58),
-       mapCoord(-100, 55), mapCoord(-85, 50), mapCoord(-75, 45), mapCoord(-65, 42),
-       mapCoord(-70, 35), mapCoord(-80, 30), mapCoord(-90, 28), mapCoord(-100, 25),
-       mapCoord(-110, 28), mapCoord(-120, 32), mapCoord(-125, 40), mapCoord(-130, 48),
-       mapCoord(-140, 55), mapCoord(-155, 58), mapCoord(-170, 65)]
-    ].map(p => p[0]), '#1e6b22', '#124a15');
+    drawContinent([[
+      mapCoord(-170, 65), mapCoord(-160, 60), mapCoord(-140, 62), mapCoord(-120, 58),
+      mapCoord(-100, 55), mapCoord(-85, 50), mapCoord(-75, 45), mapCoord(-65, 42),
+      mapCoord(-70, 35), mapCoord(-80, 30), mapCoord(-90, 28), mapCoord(-100, 25),
+      mapCoord(-110, 28), mapCoord(-120, 32), mapCoord(-125, 40), mapCoord(-130, 48),
+      mapCoord(-140, 55), mapCoord(-155, 58), mapCoord(-170, 65)
+    ]], '#1e6b22', '#124a15');
     
     // 南美
-    drawContinent([
-      [mapCoord(-80, 12), mapCoord(-65, 10), mapCoord(-50, 5), mapCoord(-45, -5),
-       mapCoord(-40, -15), mapCoord(-45, -25), mapCoord(-55, -30), mapCoord(-65, -35),
-       mapCoord(-70, -42), mapCoord(-75, -50), mapCoord(-72, -55), mapCoord(-65, -52),
-       mapCoord(-60, -45), mapCoord(-65, -35), mapCoord(-70, -25), mapCoord(-75, -15),
-       mapCoord(-78, -5), mapCoord(-80, 5), mapCoord(-80, 12)]
-    ].map(p => p[0]), '#1a7a20', '#0d5515');
+    drawContinent([[
+      mapCoord(-80, 12), mapCoord(-65, 10), mapCoord(-50, 5), mapCoord(-45, -5),
+      mapCoord(-40, -15), mapCoord(-45, -25), mapCoord(-55, -30), mapCoord(-65, -35),
+      mapCoord(-70, -42), mapCoord(-75, -50), mapCoord(-72, -55), mapCoord(-65, -52),
+      mapCoord(-60, -45), mapCoord(-65, -35), mapCoord(-70, -25), mapCoord(-75, -15),
+      mapCoord(-78, -5), mapCoord(-80, 5), mapCoord(-80, 12)
+    ]], '#1a7a20', '#0d5515');
     
     // 澳大利亚
-    drawContinent([
-      [mapCoord(115, -12), mapCoord(130, -12), mapCoord(145, -15), mapCoord(152, -20),
-       mapCoord(155, -28), mapCoord(150, -35), mapCoord(140, -38), mapCoord(130, -35),
-       mapCoord(118, -32), mapCoord(115, -25), mapCoord(112, -18), mapCoord(115, -12)]
-    ].map(p => p[0]), '#3a7a15', '#2a5a10');
+    drawContinent([[
+      mapCoord(115, -12), mapCoord(130, -12), mapCoord(145, -15), mapCoord(152, -20),
+      mapCoord(155, -28), mapCoord(150, -35), mapCoord(140, -38), mapCoord(130, -35),
+      mapCoord(118, -32), mapCoord(115, -25), mapCoord(112, -18), mapCoord(115, -12)
+    ]], '#3a7a15', '#2a5a10');
     
     // 撒哈拉/中东沙漠
     ctx.globalAlpha = 0.3;
