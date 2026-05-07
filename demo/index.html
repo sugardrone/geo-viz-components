@@ -13,97 +13,190 @@
     }
     #app { display: flex; height: 100vh; }
     #sidebar { 
-      width: 360px; 
+      width: 380px; 
       background: #111122; 
-      padding: 20px; 
+      padding: 16px; 
       overflow-y: auto;
       border-right: 1px solid #333;
     }
     #globe-container { flex: 1; position: relative; }
-    h1 { font-size: 18px; margin-bottom: 16px; color: #4da6ff; }
-    h2 { font-size: 14px; margin: 16px 0 8px; color: #888; }
+    h1 { font-size: 16px; margin-bottom: 12px; color: #4da6ff; }
+    h2 { font-size: 13px; margin: 14px 0 6px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
     .demo-btn {
-      display: block;
+      display: flex;
+      align-items: center;
+      gap: 8px;
       width: 100%;
-      padding: 10px 12px;
-      margin: 4px 0;
+      padding: 8px 10px;
+      margin: 3px 0;
       background: #1a1a2e;
       border: 1px solid #333;
       color: #ddd;
       border-radius: 6px;
       cursor: pointer;
       text-align: left;
-      font-size: 13px;
-      transition: all 0.2s;
+      font-size: 12px;
+      transition: all 0.15s;
     }
-    .demo-btn:hover { background: #252540; border-color: #4da6ff; color: #fff; }
+    .demo-btn:hover { background: #252540; border-color: #4da6ff; }
     .demo-btn.active { background: #1a3a5c; border-color: #4da6ff; }
+    .demo-btn .icon { font-size: 14px; width: 20px; text-align: center; }
+    .demo-btn .label { flex: 1; }
+    .demo-btn .toggle { 
+      width: 16px; height: 16px; 
+      border: 2px solid #555; 
+      border-radius: 3px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; color: #4da6ff;
+    }
+    .demo-btn.active .toggle { border-color: #4da6ff; background: #4da6ff22; }
+    .section-divider { border-top: 1px solid #222; margin: 8px 0; }
     .info {
       position: absolute;
       bottom: 20px;
       left: 20px;
-      background: rgba(0,0,0,0.8);
+      background: rgba(0,0,0,0.85);
       padding: 12px 16px;
       border-radius: 8px;
-      font-size: 13px;
+      font-size: 12px;
       max-width: 400px;
+      backdrop-filter: blur(8px);
     }
-    .info h3 { color: #4da6ff; margin-bottom: 4px; }
+    .info h3 { color: #4da6ff; margin-bottom: 4px; font-size: 14px; }
+    .info p { color: #aaa; line-height: 1.5; }
     .code-output {
       background: #0d0d1a;
       border: 1px solid #333;
       border-radius: 6px;
-      padding: 12px;
-      margin-top: 12px;
+      padding: 10px;
+      margin-top: 10px;
       font-family: 'SF Mono', Monaco, monospace;
-      font-size: 11px;
+      font-size: 10px;
       color: #4da6ff;
       white-space: pre-wrap;
-      max-height: 200px;
+      max-height: 180px;
       overflow-y: auto;
     }
+    .toolbar {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      gap: 8px;
+    }
+    .toolbar button {
+      padding: 6px 12px;
+      background: rgba(0,0,0,0.7);
+      border: 1px solid #444;
+      color: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .toolbar button:hover { background: #333; }
+    .status { font-size: 11px; color: #666; margin-top: 8px; }
+    .error { color: #e74c3c; font-size: 11px; margin-top: 4px; }
   </style>
 </head>
 <body>
   <div id="app">
     <div id="sidebar">
       <h1>🌍 地理可视化组件库</h1>
-      <p style="font-size:12px;color:#666;margin-bottom:16px">点击下方按钮加载不同组件</p>
+      <p style="font-size:11px;color:#555;margin-bottom:12px">点击添加组件，再次点击移除，支持叠加</p>
       
       <h2>🌍 基础</h2>
-      <button class="demo-btn" data-demo="globe">旋转地球（基础场景）</button>
-      <button class="demo-btn" data-demo="globe_graticule">地球 + 经纬网</button>
+      <button class="demo-btn" data-demo="globe_graticule">
+        <span class="icon">🌐</span>
+        <span class="label">经纬网</span>
+        <span class="toggle"></span>
+      </button>
       
+      <div class="section-divider"></div>
       <h2>🌊 洋流</h2>
-      <button class="demo-btn" data-demo="humboldt">秘鲁寒流（寒流）</button>
-      <button class="demo-btn" data-demo="gulfstream">墨西哥湾暖流</button>
-      <button class="demo-btn" data-demo="kuroshio">日本暖流（黑潮）</button>
+      <button class="demo-btn" data-demo="humboldt">
+        <span class="icon">🔵</span>
+        <span class="label">秘鲁寒流</span>
+        <span class="toggle"></span>
+      </button>
+      <button class="demo-btn" data-demo="gulfstream">
+        <span class="icon">🔴</span>
+        <span class="label">墨西哥湾暖流</span>
+        <span class="toggle"></span>
+      </button>
+      <button class="demo-btn" data-demo="kuroshio">
+        <span class="icon">🔴</span>
+        <span class="label">黑潮</span>
+        <span class="toggle"></span>
+      </button>
       
+      <div class="section-divider"></div>
       <h2>🌤️ 气候</h2>
-      <button class="demo-btn" data-demo="mediterranean">地中海气候</button>
-      <button class="demo-btn" data-demo="monsoon">季风气候</button>
-      <button class="demo-btn" data-demo="climate_map">世界气候带</button>
+      <button class="demo-btn" data-demo="mediterranean">
+        <span class="icon">☀️</span>
+        <span class="label">地中海气候</span>
+        <span class="toggle"></span>
+      </button>
+      <button class="demo-btn" data-demo="monsoon">
+        <span class="icon">🌧️</span>
+        <span class="label">季风气候</span>
+        <span class="toggle"></span>
+      </button>
+      <button class="demo-btn" data-demo="climate_map">
+        <span class="icon">🌍</span>
+        <span class="label">世界气候带</span>
+        <span class="toggle"></span>
+      </button>
       
+      <div class="section-divider"></div>
       <h2>🏔️ 地形</h2>
-      <button class="demo-btn" data-demo="himalaya">喜马拉雅造山带</button>
-      <button class="demo-btn" data-demo="terrain_types">地形类型对比</button>
+      <button class="demo-btn" data-demo="himalaya">
+        <span class="icon">⛰️</span>
+        <span class="label">喜马拉雅造山带</span>
+        <span class="toggle"></span>
+      </button>
+      <button class="demo-btn" data-demo="terrain_types">
+        <span class="icon">🗻</span>
+        <span class="label">地形类型对比</span>
+        <span class="toggle"></span>
+      </button>
       
+      <div class="section-divider"></div>
       <h2>🏙️ 城市</h2>
-      <button class="demo-btn" data-demo="chinese_cities">中国主要城市</button>
+      <button class="demo-btn" data-demo="chinese_cities">
+        <span class="icon">📍</span>
+        <span class="label">中国主要城市</span>
+        <span class="toggle"></span>
+      </button>
       
-      <h2>🔗 组合</h2>
-      <button class="demo-btn" data-demo="humboldt_fishery">秘鲁寒流 → 渔业减产</button>
-      <button class="demo-btn" data-demo="full_demo">完整案例：气候-洋流-地形</button>
+      <div class="section-divider"></div>
+      <h2>🔗 组合案例</h2>
+      <button class="demo-btn" data-demo="humboldt_fishery">
+        <span class="icon">🐟</span>
+        <span class="label">秘鲁寒流 → 渔业减产</span>
+        <span class="toggle"></span>
+      </button>
+      <button class="demo-btn" data-demo="full_demo">
+        <span class="icon">🧩</span>
+        <span class="label">完整案例：洋流+气候+地形</span>
+        <span class="toggle"></span>
+      </button>
       
-      <h2>📋 AI 输出 JSON</h2>
-      <div id="code-output" class="code-output">等待选择...</div>
+      <div class="section-divider"></div>
+      <h2>📋 当前加载的组件</h2>
+      <div id="code-output" class="code-output">点击左侧按钮添加组件...</div>
+      <div class="status" id="status">组件数: 0</div>
+      <div class="error" id="error"></div>
     </div>
     
     <div id="globe-container">
+      <div class="toolbar">
+        <button id="btn-clear">🗑️ 清除全部</button>
+        <button id="btn-reset">🔄 重置视角</button>
+      </div>
       <div class="info" id="info-panel">
         <h3>地理可视化组件库 v0.1</h3>
         <p>Three.js 标准化地理教学组件</p>
-        <p style="margin-top:8px;font-size:11px;color:#888">鼠标拖拽旋转 · 滚轮缩放 · 右键平移</p>
+        <p style="margin-top:6px;font-size:11px;color:#666">鼠标拖拽旋转 · 滚轮缩放 · 右键平移</p>
       </div>
     </div>
   </div>
@@ -118,15 +211,14 @@
   </script>
   
   <script type="module">
+    import * as THREE from 'three';
     import { SceneManager, Globe, OceanCurrent, ClimateZone, Arrow, Label, Terrain, Wind, PlateTectonic, UrbanArea, COMPONENT_REGISTRY } from '../index.js';
     
     let sceneManager = null;
+    const loadedDemos = new Map(); // demoName -> instanceIds[]
     
+    // Demo 定义
     const demos = {
-      globe: {
-        components: [],
-        info: '基础地球模型'
-      },
       globe_graticule: {
         components: [],
         globeParams: { showGraticule: true },
@@ -263,52 +355,104 @@
       }
     };
     
-    // 清除并重新创建场景
-    function loadDemo(name) {
-      const demo = demos[name];
-      if (!demo) return;
-      
-      if (sceneManager) {
-        sceneManager.dispose();
-        sceneManager = null;
-      }
-      
+    // 初始化场景
+    function initScene() {
       const container = document.getElementById('globe-container');
       sceneManager = new SceneManager(container, { backgroundColor: 0x000011 });
       
-      // 加载地球（自定义参数）
+      // 加载地球
       const globe = new Globe();
-      sceneManager.addComponent(globe, demo.globeParams || {});
-      
-      // 加载组件
-      if (demo.components.length > 0) {
-        sceneManager.loadComponents(demo.components, COMPONENT_REGISTRY);
-      }
-      
+      sceneManager.addComponent(globe, {});
       sceneManager.start();
-      
-      // 更新信息面板
-      document.getElementById('info-panel').innerHTML = `
-        <h3>${name}</h3>
-        <p>${demo.info}</p>
-      `;
-      
-      // 显示 JSON
-      document.getElementById('code-output').textContent = 
-        JSON.stringify(demo.components, null, 2);
-      
-      // 高亮按钮
-      document.querySelectorAll('.demo-btn').forEach(b => b.classList.remove('active'));
-      document.querySelector(`[data-demo="${name}"]`)?.classList.add('active');
     }
     
-    // 绑定按钮事件
-    document.querySelectorAll('.demo-btn').forEach(btn => {
-      btn.addEventListener('click', () => loadDemo(btn.dataset.demo));
+    // 切换 demo（叠加/移除）
+    function toggleDemo(name) {
+      const demo = demos[name];
+      if (!demo) return;
+      
+      const btn = document.querySelector(`[data-demo="${name}"]`);
+      
+      if (loadedDemos.has(name)) {
+        // 移除
+        const ids = loadedDemos.get(name);
+        ids.forEach(id => sceneManager.removeComponent(id));
+        loadedDemos.delete(name);
+        btn?.classList.remove('active');
+      } else {
+        // 添加
+        const ids = [];
+        for (const comp of demo.components) {
+          const ComponentClass = COMPONENT_REGISTRY[comp.id];
+          if (!ComponentClass) {
+            console.warn(`组件 ${comp.id} 不存在`);
+            continue;
+          }
+          try {
+            const instance = new ComponentClass();
+            const instanceId = sceneManager.addComponent(instance, comp.params);
+            ids.push(instanceId);
+          } catch (e) {
+            console.error(`渲染 ${comp.id} 失败:`, e);
+            document.getElementById('error').textContent = `渲染失败: ${comp.id} - ${e.message}`;
+          }
+        }
+        loadedDemos.set(name, ids);
+        btn?.classList.add('active');
+      }
+      
+      updateUI();
+    }
+    
+    // 更新 UI
+    function updateUI() {
+      const total = sceneManager.components.size;
+      document.getElementById('status').textContent = `组件数: ${total}`;
+      
+      // 列出所有组件
+      const list = [];
+      for (const [id, comp] of sceneManager.components) {
+        if (comp.metadata.id === 'globe') continue;
+        list.push({ id: comp.metadata.id, name: comp.metadata.name, instanceId: id });
+      }
+      
+      const output = list.length > 0
+        ? list.map(c => `${c.name} (${c.id}) #${c.instanceId}`).join('\n')
+        : '无组件（地球始终加载）';
+      document.getElementById('code-output').textContent = output;
+    }
+    
+    // 清除所有
+    document.getElementById('btn-clear').addEventListener('click', () => {
+      for (const [name, ids] of loadedDemos) {
+        ids.forEach(id => sceneManager.removeComponent(id));
+        document.querySelector(`[data-demo="${name}"]`)?.classList.remove('active');
+      }
+      loadedDemos.clear();
+      updateUI();
     });
     
-    // 默认加载第一个 demo
-    loadDemo('humboldt_fishery');
+    // 重置视角
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      sceneManager.camera.position.set(0, 0, 2.5);
+      sceneManager.controls.reset();
+    });
+    
+    // 绑定按钮
+    document.querySelectorAll('.demo-btn').forEach(btn => {
+      btn.addEventListener('click', () => toggleDemo(btn.dataset.demo));
+    });
+    
+    // 初始化
+    try {
+      initScene();
+      updateUI();
+      // 默认加载一个
+      toggleDemo('humboldt_fishery');
+    } catch (e) {
+      console.error('初始化失败:', e);
+      document.getElementById('error').textContent = `初始化失败: ${e.message}`;
+    }
   </script>
 </body>
 </html>
