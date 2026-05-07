@@ -9,7 +9,7 @@
 import http from 'http';
 import https from 'https';
 
-const PORT = 3000;
+const PORT = 80;
 const GATEWAY_HOST = '127.0.0.1';
 const GATEWAY_PORT = 18789;
 const GATEWAY_TOKEN = '38ba03e8caf00adc553ec167344c403c7a14a86979960c730bc2c0bf02db2f9f';
