@@ -9,6 +9,7 @@
     "build": "echo 'TODO: add bundler'"
   },
   "dependencies": {
+    "sharp": "^0.34.5",
     "three": "^0.170.0"
   }
 }

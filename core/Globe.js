@@ -51,60 +51,22 @@ export class Globe extends BaseComponent {
   _createSphere() {
     const geometry = new THREE.SphereGeometry(this.radius, 64, 64);
     
-    // 先用纯色确保 3D 渲染正常
     const material = new THREE.MeshPhongMaterial({
-      color: 0x2266aa,
-      shininess: 25,
-      specular: 0x444444
+      shininess: 20,
+      specular: new THREE.Color(0x333355)
+    });
+    
+    // 加载贴图
+    const loader = new THREE.TextureLoader();
+    loader.load('/vendor/earth_texture.jpg', (texture) => {
+      material.map = texture;
+      material.needsUpdate = true;
     });
     
     this._sphere = new THREE.Mesh(geometry, material);
     this.group.add(this._sphere);
     
-    // 加载纹理
-    const loader = new THREE.TextureLoader();
-    loader.load('/vendor/earth_texture.jpg', (texture) => {
-      material.map = texture;
-      material.needsUpdate = true;
-      console.log('纹理加载成功');
-    }, undefined, (err) => {
-      console.error('纹理加载失败:', err);
-      // 回退到程序化纹理
-      this._fallbackTexture(material);
-    });
-    
     this._createGraticuleLines();
-  }
-  
-  _fallbackTexture(material) {
-    const canvas = document.createElement('canvas');
-    canvas.width = 1024;
-    canvas.height = 512;
-    const ctx = canvas.getContext('2d');
-    
-    ctx.fillStyle = '#0d2847';
-    ctx.fillRect(0, 0, 1024, 512);
-    
-    const mc = (lng, lat) => [(lng + 180) / 360 * 1024, (90 - lat) / 180 * 512];
-    const land = (coords, color) => {
-      ctx.beginPath();
-      ctx.moveTo(coords[0][0], coords[0][1]);
-      for (let i = 1; i < coords.length; i++) ctx.lineTo(coords[i][0], coords[i][1]);
-      ctx.closePath();
-      ctx.fillStyle = color;
-      ctx.fill();
-    };
-    
-    land([mc(-10,70),mc(20,60),mc(50,50),mc(80,42),mc(110,35),mc(130,35),mc(145,50),mc(140,65),mc(100,72),mc(50,70),mc(0,72),mc(-10,70)], '#1a7b2a');
-    land([mc(-15,37),mc(10,35),mc(30,22),mc(50,2),mc(42,-15),mc(25,-34),mc(12,-25),mc(5,5),mc(-12,15),mc(-15,37)], '#2a8b1a');
-    land([mc(-170,68),mc(-120,60),mc(-80,48),mc(-68,44),mc(-85,30),mc(-115,30),mc(-135,52),mc(-170,68)], '#1e8b22');
-    land([mc(-80,12),mc(-50,0),mc(-40,-15),mc(-55,-35),mc(-72,-50),mc(-62,-42),mc(-70,-15),mc(-80,12)], '#1a9b20');
-    land([mc(115,-12),mc(150,-20),mc(148,-36),mc(120,-34),mc(113,-18),mc(115,-12)], '#3a9b15');
-    ctx.fillStyle = '#d0e0f0';
-    ctx.fillRect(0, 460, 1024, 52);
-    
-    material.map = new THREE.CanvasTexture(canvas);
-    material.needsUpdate = true;
   }
 
   _createGraticuleLines() {
