@@ -1,7 +1,7 @@
 import * as THREE from "three";
 /**
- * OceanCurrent - 洋流组件
- * 支持寒流、暖流、一般洋流的可视化
+ * OceanCurrent - 洋流组件（增强版）
+ * 粒子流动 + 发光轨迹 + 动态箭头
  */
 
 import { BaseComponent } from '../core/BaseComponent.js';
@@ -13,29 +13,25 @@ export class OceanCurrent extends BaseComponent {
       id: 'ocean_current',
       name: '洋流',
       category: 'ocean',
-      description: '洋流可视化，支持流动动画',
+      description: '洋流可视化，粒子流动动画',
       params: {
-        path: { type: 'array', required: true, description: '洋流路径 [[lng, lat], ...]' },
-        direction: { type: 'string', default: 'forward', description: '方向 forward/backward' },
-        type: { type: 'string', default: 'cold', description: '类型 cold/warm/neutral' },
-        temperature: { type: 'number', default: 15, description: '水温' },
-        width: { type: 'number', default: 0.003, description: '线条宽度' },
-        animated: { type: 'boolean', default: true, description: '是否流动动画' },
-        label: { type: 'string', default: '', description: '洋流名称' }
+        path: { type: 'array', required: true },
+        type: { type: 'string', default: 'cold' },
+        width: { type: 'number', default: 0.003 },
+        animated: { type: 'boolean', default: true },
+        label: { type: 'string', default: '' }
       },
-      keywords: ['洋流', '寒流', '暖流', '海流', '秘鲁寒流', '北大西洋暖流', '墨西哥湾流', '黑潮', '亲潮']
+      keywords: ['洋流', '寒流', '暖流', '海流']
     });
     
-    this._animationTime = 0;
-    this._flowLines = [];
+    this._particles = [];
+    this._time = 0;
   }
 
   render(scene, params = {}) {
     this.params = {
       path: [],
-      direction: 'forward',
       type: 'cold',
-      temperature: 15,
       width: 0.003,
       animated: true,
       label: '',
@@ -45,91 +41,148 @@ export class OceanCurrent extends BaseComponent {
     const path = this.params.path;
     if (path.length < 2) return;
     
-    // 确定颜色
-    const colorMap = { cold: Colors.ocean.cold, warm: Colors.ocean.warm, neutral: Colors.ocean.current };
-    const baseColor = colorMap[this.params.type] || Colors.ocean.current;
+    const colorMap = {
+      cold: new THREE.Color(0x1a8cff),
+      warm: new THREE.Color(0xff4444),
+      neutral: new THREE.Color(0x44aaff)
+    };
+    const baseColor = colorMap[this.params.type] || colorMap.neutral;
     
-    // 将路径点转换为 3D 坐标
-    const radius = 1.002; // 略高于地球表面
+    // 路径转 3D
+    const radius = 1.003;
     const coords3D = path.map(([lng, lat]) => latLngToVector3(lat, lng, radius));
     
-    // 生成平滑曲线
+    // 平滑曲线
     const curvePoints = [];
     for (let i = 0; i < coords3D.length - 1; i++) {
-      const arcPoints = interpolateArc(coords3D[i], coords3D[i + 1], 20, 0.015);
+      const arcPoints = interpolateArc(coords3D[i], coords3D[i + 1], 30, 0.012);
       curvePoints.push(...arcPoints.slice(i === 0 ? 0 : 1));
     }
     
-    // 主线条
-    const lineGeometry = new THREE.BufferGeometry().setFromPoints(curvePoints);
-    const lineMaterial = new THREE.LineBasicMaterial({
-      color: baseColor,
-      linewidth: 2,
-      transparent: true,
-      opacity: 0.9
-    });
-    const line = new THREE.Line(lineGeometry, lineMaterial);
-    this.group.add(line);
-    this._flowLines.push(line);
+    this._curvePoints = curvePoints;
     
-    // 流动箭头（动画用）
+    // 底层轨迹线（淡色）
+    const trailGeometry = new THREE.BufferGeometry().setFromPoints(curvePoints);
+    const trailMaterial = new THREE.LineBasicMaterial({
+      color: baseColor,
+      transparent: true,
+      opacity: 0.25,
+      linewidth: 1
+    });
+    this.group.add(new THREE.Line(trailGeometry, trailMaterial));
+    
+    // 发光轨迹线
+    const glowGeometry = new THREE.BufferGeometry().setFromPoints(curvePoints);
+    const glowMaterial = new THREE.LineBasicMaterial({
+      color: baseColor,
+      transparent: true,
+      opacity: 0.5,
+      linewidth: 2
+    });
+    this.group.add(new THREE.Line(glowGeometry, glowMaterial));
+    
+    // 流动粒子
     if (this.params.animated) {
-      this._createFlowArrows(curvePoints, baseColor);
+      this._createParticles(curvePoints, baseColor);
     }
     
-    // 起点和终点标记
-    this._createEndpoint(coords3D[0], 0x00ff00, '起点');
-    this._createEndpoint(coords3D[coords3D.length - 1], 0xff0000, '终点');
+    // 方向箭头（沿路径均匀分布）
+    this._createDirectionArrows(curvePoints, baseColor);
   }
 
-  _createFlowArrows(points, color) {
-    const arrowCount = Math.max(3, Math.floor(points.length / 15));
-    const arrowGeometry = new THREE.ConeGeometry(0.008, 0.02, 8);
-    const arrowMaterial = new THREE.MeshBasicMaterial({ color });
+  _createParticles(points, color) {
+    const particleCount = Math.min(60, Math.max(20, points.length / 2));
+    
+    for (let i = 0; i < particleCount; i++) {
+      // 粒子球
+      const size = 0.004 + Math.random() * 0.003;
+      const geometry = new THREE.SphereGeometry(size, 8, 8);
+      const material = new THREE.MeshBasicMaterial({
+        color: color,
+        transparent: true,
+        opacity: 0.9
+      });
+      const particle = new THREE.Mesh(geometry, material);
+      
+      // 发光外圈
+      const glowGeometry = new THREE.SphereGeometry(size * 2.5, 8, 8);
+      const glowMaterial = new THREE.MeshBasicMaterial({
+        color: color,
+        transparent: true,
+        opacity: 0.25,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+      particle.add(glow);
+      
+      // 沿路径分布
+      particle._t = i / particleCount;
+      particle._speed = 0.03 + Math.random() * 0.02;
+      particle._points = points;
+      
+      this.group.add(particle);
+      this._particles.push(particle);
+    }
+  }
+
+  _createDirectionArrows(points, color) {
+    const arrowCount = Math.max(2, Math.floor(points.length / 25));
     
     for (let i = 0; i < arrowCount; i++) {
-      const arrow = new THREE.Mesh(arrowGeometry, arrowMaterial);
-      arrow._flowIndex = (i / arrowCount) * points.length;
-      arrow._points = points;
+      const t = (i + 0.5) / arrowCount;
+      const idx = Math.floor(t * (points.length - 1));
+      
+      if (idx >= points.length - 1) continue;
+      
+      const pos = points[idx].clone();
+      const nextPos = points[Math.min(idx + 1, points.length - 1)].clone();
+      const dir = new THREE.Vector3().subVectors(nextPos, pos).normalize();
+      
+      // 三角箭头
+      const shape = new THREE.Shape();
+      shape.moveTo(0, 0.012);
+      shape.lineTo(-0.006, -0.006);
+      shape.lineTo(0.006, -0.006);
+      shape.closePath();
+      
+      const geometry = new THREE.ShapeGeometry(shape);
+      const material = new THREE.MeshBasicMaterial({
+        color: color,
+        transparent: true,
+        opacity: 0.7,
+        side: THREE.DoubleSide
+      });
+      
+      const arrow = new THREE.Mesh(geometry, material);
+      arrow.position.copy(pos);
+      arrow.lookAt(nextPos);
+      
       this.group.add(arrow);
-      this._flowLines.push(arrow);
     }
-  }
-
-  _createEndpoint(position, color, label) {
-    const geometry = new THREE.SphereGeometry(0.008, 16, 16);
-    const material = new THREE.MeshBasicMaterial({ color });
-    const sphere = new THREE.Mesh(geometry, material);
-    sphere.position.copy(position);
-    this.group.add(sphere);
   }
 
   update(params, delta) {
-    if (!this.params.animated) return;
+    this._time += delta;
     
-    this._animationTime += delta * 0.5;
-    const points = this._flowLines[0]?._geometry?.attributes?.position;
-    if (!points) return;
-    
-    // 更新流动箭头位置
-    for (const obj of this._flowLines) {
-      if (obj.isMesh && obj._points) {
-        obj._flowIndex = (obj._flowIndex + delta * 15) % obj._points.length;
-        const idx = Math.floor(obj._flowIndex);
-        const nextIdx = (idx + 1) % obj._points.length;
-        const t = obj._flowIndex - idx;
-        
-        const pos = new THREE.Vector3().lerpVectors(
-          obj._points[idx], obj._points[nextIdx], t
-        );
-        obj.position.copy(pos);
-        
-        // 朝向流动方向
-        const dir = new THREE.Vector3().subVectors(
-          obj._points[nextIdx], obj._points[idx]
-        ).normalize();
-        obj.lookAt(pos.clone().add(dir));
+    for (const particle of this._particles) {
+      particle._t += particle._speed * delta;
+      if (particle._t > 1) particle._t -= 1;
+      
+      const points = particle._points;
+      const totalLen = points.length - 1;
+      const pos = particle._t * totalLen;
+      const idx = Math.floor(pos);
+      const t = pos - idx;
+      
+      if (idx < totalLen) {
+        const p = new THREE.Vector3().lerpVectors(points[idx], points[idx + 1], t);
+        particle.position.copy(p);
       }
+      
+      // 脉动效果
+      const pulse = 0.7 + Math.sin(this._time * 3 + particle._t * 10) * 0.3;
+      particle.material.opacity = pulse * 0.9;
     }
   }
 }
