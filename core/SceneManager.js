@@ -93,7 +93,11 @@ export class SceneManager {
     const instanceId = `comp_${this._componentIdCounter++}`;
     component._instanceId = instanceId;
     
-    this.scene.add(component.group);
+    // 如果有 globe，组件作为 globe 的子对象（跟着转）
+    const globe = this.components.get('comp_0');
+    const parent = globe ? globe.group : this.scene;
+    parent.add(component.group);
+    
     component.render(this.scene, params, { globe: this });
     this.components.set(instanceId, component);
     
