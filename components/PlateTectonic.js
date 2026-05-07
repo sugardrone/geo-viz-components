@@ -1,3 +1,4 @@
+import * as THREE from "three";
 /**
  * PlateTectonic - 板块构造组件
  * 显示板块边界和运动方向

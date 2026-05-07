@@ -1,3 +1,4 @@
+import * as THREE from "three";
 /**
  * geo-viz-components - 地理可视化组件库
  * 

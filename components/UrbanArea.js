@@ -1,3 +1,4 @@
+import * as THREE from "three";
 /**
  * UrbanArea - 城市区域组件
  * 显示城市分布和规模

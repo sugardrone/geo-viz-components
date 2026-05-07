@@ -1,3 +1,4 @@
+import * as THREE from "three";
 /**
  * SceneManager - 场景管理器
  * 管理 Three.js 场景、相机、渲染器、组件生命周期

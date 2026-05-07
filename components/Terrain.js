@@ -1,3 +1,4 @@
+import * as THREE from "three";
 /**
  * Terrain - 地形组件
  * 显示地形类型区域

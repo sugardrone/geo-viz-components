@@ -1,3 +1,4 @@
+import * as THREE from "three";
 /**
  * ClimateZone - 气候带组件
  * 在地球表面显示气候区域着色

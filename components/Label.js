@@ -1,3 +1,4 @@
+import * as THREE from "three";
 /**
  * Label - 标注组件
  * 在地球表面显示文字标注

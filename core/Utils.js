@@ -1,3 +1,4 @@
+import * as THREE from "three";
 /**
  * 地理坐标转换工具
  * 经纬度 ↔ Three.js 3D 坐标

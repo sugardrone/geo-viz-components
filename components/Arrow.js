@@ -1,3 +1,4 @@
+import * as THREE from "three";
 /**
  * Arrow - 因果关系箭头
  * 用于展示地理要素之间的因果关系

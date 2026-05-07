@@ -1,3 +1,4 @@
+import * as THREE from "three";
 /**
  * Wind - 风向组件
  * 显示风向和风力

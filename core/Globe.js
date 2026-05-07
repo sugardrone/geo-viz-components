@@ -1,3 +1,4 @@
+import * as THREE from "three";
 /**
  * Globe - 地球模型
  * 必加载组件，提供地球基础场景

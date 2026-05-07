@@ -1,3 +1,4 @@
+import * as THREE from "three";
 /**
  * BaseComponent - 所有地理可视化组件的基类
  * 

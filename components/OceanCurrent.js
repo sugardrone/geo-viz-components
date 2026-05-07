@@ -1,3 +1,4 @@
+import * as THREE from "three";
 /**
  * OceanCurrent - 洋流组件
  * 支持寒流、暖流、一般洋流的可视化
