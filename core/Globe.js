@@ -45,25 +45,51 @@ export class Globe extends BaseComponent {
   }
 
   _createSphere() {
-    const geometry = new THREE.SphereGeometry(this.radius, 64, 64);
+    // 高面数球体，让凹凸效果更细腻
+    const geometry = new THREE.SphereGeometry(this.radius, 128, 64);
     
     const material = new THREE.MeshPhongMaterial({
-      shininess: 20,
-      specular: new THREE.Color(0x333355),
-      color: 0x2233aa // fallback 颜色
+      shininess: 15,
+      specular: new THREE.Color(0x222244),
+      color: 0x2233aa,
+      bumpScale: 0.04 // 凹凸强度
     });
     
     const loader = new THREE.TextureLoader();
+    
+    // 并行加载颜色贴图和高度图
+    let loadedCount = 0;
+    const onLoaded = () => {
+      loadedCount++;
+      if (loadedCount >= 2) {
+        material.color.set(0xffffff);
+        material.needsUpdate = true;
+      }
+    };
+    
+    // 颜色贴图
     loader.load('/vendor/earth_texture.jpg', 
       (texture) => {
         this._texture = texture;
         material.map = texture;
-        material.color.set(0xffffff);
-        material.needsUpdate = true;
+        onLoaded();
       },
       undefined,
       (err) => {
         console.warn('地球纹理加载失败，使用纯色 fallback');
+      }
+    );
+    
+    // 高度图（凹凸贴图）
+    loader.load('/vendor/earth_bump.png',
+      (texture) => {
+        this._bumpTexture = texture;
+        material.bumpMap = texture;
+        onLoaded();
+      },
+      undefined,
+      (err) => {
+        console.warn('高度图加载失败，无凹凸效果');
       }
     );
     
@@ -145,6 +171,10 @@ export class Globe extends BaseComponent {
     if (this._texture) {
       this._texture.dispose();
       this._texture = null;
+    }
+    if (this._bumpTexture) {
+      this._bumpTexture.dispose();
+      this._bumpTexture = null;
     }
     super.destroy();
   }
