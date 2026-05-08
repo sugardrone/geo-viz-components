@@ -122,7 +122,8 @@ export class Arrow extends BaseComponent {
     const spriteMaterial = new THREE.SpriteMaterial({
       map: texture,
       transparent: true,
-      depthTest: false
+      depthTest: true,
+      depthWrite: true
     });
     const sprite = new THREE.Sprite(spriteMaterial);
     sprite.position.copy(position);
