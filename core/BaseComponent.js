@@ -47,15 +47,18 @@ export class BaseComponent {
     if (this._disposed) return;
     this._disposed = true;
     
-    // 遍历 group 中所有对象并释放
     this.group.traverse((child) => {
       if (child.geometry) child.geometry.dispose();
       if (child.material) {
-        if (Array.isArray(child.material)) {
-          child.material.forEach(m => m.dispose());
-        } else {
-          child.material.dispose();
-        }
+        const materials = Array.isArray(child.material) ? child.material : [child.material];
+        materials.forEach(m => {
+          if (m.map) m.map.dispose();
+          if (m.normalMap) m.normalMap.dispose();
+          if (m.specularMap) m.specularMap.dispose();
+          if (m.alphaMap) m.alphaMap.dispose();
+          if (m.emissiveMap) m.emissiveMap.dispose();
+          m.dispose();
+        });
       }
     });
     

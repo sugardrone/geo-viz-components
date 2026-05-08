@@ -168,10 +168,9 @@ export class SceneManager {
     
     // 更新所有组件（动画）
     for (const comp of this.components.values()) {
-      if (comp.update && comp._lastUpdate !== undefined) {
+      if (typeof comp.update === 'function') {
         comp.update(comp.params, delta);
       }
-      comp._lastUpdate = delta;
     }
     
     this.renderer.render(this.scene, this.camera);

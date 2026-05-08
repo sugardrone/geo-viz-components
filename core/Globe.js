@@ -1,11 +1,11 @@
 import * as THREE from "three";
 /**
- * Globe - 地球模型（增强版）
- * 真实纹理 + 大气光晕 + 晨昏线
+ * Globe - 地球模型
+ * 真实纹理 + 经纬网
  */
 
 import { BaseComponent } from './BaseComponent.js';
-import { latLngToVector3, Colors } from './Utils.js';
+import { latLngToVector3 } from './Utils.js';
 
 export class Globe extends BaseComponent {
   constructor() {
@@ -18,13 +18,13 @@ export class Globe extends BaseComponent {
         radius: { type: 'number', default: 1 },
         showAtmosphere: { type: 'boolean', default: false },
         showGraticule: { type: 'boolean', default: false },
-        rotateSpeed: { type: 'number', default: 0.0005 }
+        rotateSpeed: { type: 'number', default: 0.05 }
       },
       keywords: ['地球', '世界', '全球', '地图']
     });
     
     this.radius = 1;
-    this._autoRotate = false;
+    this._texture = null;
   }
 
   render(scene, params = {}) {
@@ -32,7 +32,7 @@ export class Globe extends BaseComponent {
       radius: 1,
       showAtmosphere: false,
       showGraticule: false,
-      rotateSpeed: 0.0005,
+      rotateSpeed: 0.05,
       ...params
     };
     
@@ -42,10 +42,6 @@ export class Globe extends BaseComponent {
     if (this.params.showAtmosphere) {
       this._createAtmosphere();
     }
-    
-    if (this.params.showGraticule) {
-      this._createGraticule();
-    }
   }
 
   _createSphere() {
@@ -53,15 +49,23 @@ export class Globe extends BaseComponent {
     
     const material = new THREE.MeshPhongMaterial({
       shininess: 20,
-      specular: new THREE.Color(0x333355)
+      specular: new THREE.Color(0x333355),
+      color: 0x2233aa // fallback 颜色
     });
     
-    // 加载贴图
     const loader = new THREE.TextureLoader();
-    loader.load('/vendor/earth_texture.jpg', (texture) => {
-      material.map = texture;
-      material.needsUpdate = true;
-    });
+    loader.load('/vendor/earth_texture.jpg', 
+      (texture) => {
+        this._texture = texture;
+        material.map = texture;
+        material.color.set(0xffffff);
+        material.needsUpdate = true;
+      },
+      undefined,
+      (err) => {
+        console.warn('地球纹理加载失败，使用纯色 fallback');
+      }
+    );
     
     this._sphere = new THREE.Mesh(geometry, material);
     this.group.add(this._sphere);
@@ -82,8 +86,7 @@ export class Globe extends BaseComponent {
       for (let lat = -85; lat <= 85; lat += 1) {
         points.push(latLngToVector3(lat, lng, this.radius * 1.001));
       }
-      const geometry = new THREE.BufferGeometry().setFromPoints(points);
-      this.group.add(new THREE.Line(geometry, lineMaterial));
+      this.group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), lineMaterial));
     }
     
     // 纬线
@@ -92,13 +95,11 @@ export class Globe extends BaseComponent {
       for (let lng = -180; lng <= 180; lng += 1) {
         points.push(latLngToVector3(lat, lng, this.radius * 1.001));
       }
-      const geometry = new THREE.BufferGeometry().setFromPoints(points);
-      this.group.add(new THREE.Line(geometry, lineMaterial));
+      this.group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), lineMaterial));
     }
   }
 
   _createAtmosphere() {
-    // 微弱的边缘光晕
     const geometry = new THREE.SphereGeometry(this.radius * 1.01, 64, 64);
     const material = new THREE.ShaderMaterial({
       vertexShader: `
@@ -126,12 +127,7 @@ export class Globe extends BaseComponent {
       depthWrite: false,
       blending: THREE.AdditiveBlending
     });
-    this._atmosphere = new THREE.Mesh(geometry, material);
-    this.group.add(this._atmosphere);
-  }
-
-  _createGraticule() {
-    // 已在 _createSphere 中实现
+    this.group.add(new THREE.Mesh(geometry, material));
   }
 
   getRadius() {
@@ -140,8 +136,17 @@ export class Globe extends BaseComponent {
 
   update(params, delta) {
     if (this.params.rotateSpeed) {
-      this.group.rotation.y += this.params.rotateSpeed;
+      // 基于 delta time 的自转，帧率无关
+      this.group.rotation.y += this.params.rotateSpeed * delta;
     }
+  }
+
+  destroy() {
+    if (this._texture) {
+      this._texture.dispose();
+      this._texture = null;
+    }
+    super.destroy();
   }
 }
 
