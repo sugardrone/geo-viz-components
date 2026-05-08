@@ -71,3 +71,5 @@ export function quickRender(container, componentList) {
   
   return scene;
 }
+
+export { OCEAN_CURRENTS, PLATE_BOUNDARIES, CLIMATE_CENTERS } from "./data/geo-data.js";
