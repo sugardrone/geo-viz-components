@@ -1,7 +1,7 @@
 import * as THREE from "three";
 /**
- * Arrow - 因果关系箭头
- * 用于展示地理要素之间的因果关系
+ * Arrow - 因果关系箭头（增强版）
+ * 清晰的因果链可视化
  */
 
 import { BaseComponent } from '../core/BaseComponent.js';
@@ -15,12 +15,11 @@ export class Arrow extends BaseComponent {
       category: 'ui',
       description: '地理要素之间的因果关系箭头',
       params: {
-        from: { type: 'array', required: true, description: '起点 [lng, lat]' },
-        to: { type: 'array', required: true, description: '终点 [lng, lat]' },
-        color: { type: 'string', default: 'auto', description: '颜色' },
-        label: { type: 'string', default: '', description: '箭头标签' },
-        dashed: { type: 'boolean', default: false, description: '虚线' },
-        altitude: { type: 'number', default: 0.03, description: '弧线高度' }
+        from: { type: 'array', required: true },
+        to: { type: 'array', required: true },
+        color: { type: 'string', default: '#ff6644' },
+        label: { type: 'string', default: '' },
+        altitude: { type: 'number', default: 0.04 }
       },
       keywords: ['箭头', '因果', '关系', '导致', '影响']
     });
@@ -30,10 +29,9 @@ export class Arrow extends BaseComponent {
     this.params = {
       from: [0, 0],
       to: [0, 0],
-      color: 'auto',
+      color: '#ff6644',
       label: '',
-      dashed: false,
-      altitude: 0.03,
+      altitude: 0.04,
       ...params
     };
     
@@ -44,36 +42,40 @@ export class Arrow extends BaseComponent {
     // 弧线路径
     const curvePoints = interpolateArc(start, end, 32, this.params.altitude);
     
-    // 线条
-    const color = this.params.color === 'auto' ? Colors.ui.arrow : new THREE.Color(this.params.color);
+    const color = new THREE.Color(this.params.color);
+    
+    // 底层淡线（增加可见度）
+    const glowGeometry = new THREE.BufferGeometry().setFromPoints(curvePoints);
+    const glowMaterial = new THREE.LineBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0.3,
+      linewidth: 4
+    });
+    this.group.add(new THREE.Line(glowGeometry, glowMaterial));
+    
+    // 主线条
     const lineGeometry = new THREE.BufferGeometry().setFromPoints(curvePoints);
     const lineMaterial = new THREE.LineBasicMaterial({
       color,
       transparent: true,
-      opacity: 0.8,
+      opacity: 0.9,
       linewidth: 2
     });
+    this.group.add(new THREE.Line(lineGeometry, lineMaterial));
     
-    if (this.params.dashed) {
-      lineMaterial.setLineDash && lineMaterial.setLineDash([0.02, 0.02]);
-    }
-    
-    const line = new THREE.Line(lineGeometry, lineMaterial);
-    this.group.add(line);
-    
-    // 箭头头部
+    // 箭头头部（更大的三角形）
     const lastTwoPoints = curvePoints.slice(-2);
     const dir = new THREE.Vector3().subVectors(lastTwoPoints[1], lastTwoPoints[0]).normalize();
     
-    const coneGeometry = new THREE.ConeGeometry(0.01, 0.025, 8);
+    const coneGeometry = new THREE.ConeGeometry(0.012, 0.03, 8);
     const coneMaterial = new THREE.MeshBasicMaterial({ color });
     const cone = new THREE.Mesh(coneGeometry, coneMaterial);
-    
     cone.position.copy(lastTwoPoints[1]);
     cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
     this.group.add(cone);
     
-    // 标签
+    // 标签（带背景框和描边）
     if (this.params.label) {
       const midPoint = curvePoints[Math.floor(curvePoints.length / 2)];
       this._createLabel(midPoint, this.params.label, color);
@@ -82,26 +84,54 @@ export class Arrow extends BaseComponent {
 
   _createLabel(position, text, color) {
     const canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 64;
     const ctx = canvas.getContext('2d');
     
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.roundRect(0, 0, 256, 64, 8);
+    ctx.font = 'bold 22px "Microsoft YaHei", Arial, sans-serif';
+    const textWidth = ctx.measureText(text).width;
+    
+    canvas.width = Math.max(textWidth + 30, 100);
+    canvas.height = 40;
+    
+    ctx.font = 'bold 22px "Microsoft YaHei", Arial, sans-serif';
+    
+    // 背景
+    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+    ctx.beginPath();
+    ctx.roundRect(4, 4, canvas.width - 8, canvas.height - 8, 6);
     ctx.fill();
     
+    // 边框
+    ctx.strokeStyle = `rgb(${color.r*255},${color.g*255},${color.b*255})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(4, 4, canvas.width - 8, canvas.height - 8, 6);
+    ctx.stroke();
+    
+    // 文字描边
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 20px Arial';
+    ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+    ctx.lineWidth = 3;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(text, 128, 32);
+    ctx.strokeText(text, canvas.width / 2, canvas.height / 2);
+    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
     
     const texture = new THREE.CanvasTexture(canvas);
-    const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
+    texture.minFilter = THREE.LinearFilter;
+    
+    const spriteMaterial = new THREE.SpriteMaterial({
+      map: texture,
+      transparent: true,
+      depthTest: false
+    });
     const sprite = new THREE.Sprite(spriteMaterial);
     sprite.position.copy(position);
-    sprite.position.y += 0.02;
-    sprite.scale.set(0.12, 0.03, 1);
+    sprite.position.y += 0.025;
+    
+    const aspect = canvas.width / canvas.height;
+    const height = 0.035;
+    sprite.scale.set(height * aspect, height, 1);
+    
     this.group.add(sprite);
   }
 }
