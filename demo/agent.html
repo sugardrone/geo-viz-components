@@ -88,6 +88,19 @@
       color: #4da6ff;
     }
     .error-msg { color: #e74c3c; font-size: 11px; margin-top: 4px; }
+    #rotate-toggle {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      border: 1px solid #4da6ff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    #rotate-toggle:hover { background: rgba(77,166,255,0.3); }
   </style>
 </head>
 <body>
@@ -102,6 +115,7 @@
     </div>
     <div id="viz-container">
       <div class="viz-label">Three.js 可视化</div>
+      <button id="rotate-toggle" onclick="toggleRotation()">⏸ 停止自转</button>
     </div>
   </div>
 
@@ -129,6 +143,17 @@
       scene.addComponent(globe, {});
       scene.start();
     }
+    
+    // 切换地球自转
+    let isRotating = true;
+    window.toggleRotation = function() {
+      isRotating = !isRotating;
+      const globe = [...scene.components.values()].find(c => c.metadata?.id === 'globe');
+      if (globe) {
+        globe.params.rotateSpeed = isRotating ? 0.0005 : 0;
+      }
+      document.getElementById('rotate-toggle').textContent = isRotating ? '⏸ 停止自转' : '▶ 开始自转';
+    };
     
     // 添加消息到聊天
     function addMessage(text, type = 'ai') {
