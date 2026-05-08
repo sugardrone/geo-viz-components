@@ -52,7 +52,7 @@ export class Globe extends BaseComponent {
       shininess: 15,
       specular: new THREE.Color(0x222244),
       color: 0x2233aa,
-      bumpScale: 0.04 // 凹凸强度
+      bumpScale: 0.12 // 凹凸强度
     });
     
     const loader = new THREE.TextureLoader();
