@@ -1,7 +1,7 @@
 import * as THREE from "three";
 /**
- * Globe - 地球模型
- * 真实纹理 + 经纬网
+ * Globe - 地球模型（真实地形起伏版）
+ * 自定义顶点着色器 + displacement map = 真实几何起伏
  */
 
 import { BaseComponent } from './BaseComponent.js';
@@ -13,7 +13,7 @@ export class Globe extends BaseComponent {
       id: 'globe',
       name: '地球',
       category: 'core',
-      description: '3D 地球模型，支持纹理贴图和交互',
+      description: '3D 地球模型，真实地形起伏',
       params: {
         radius: { type: 'number', default: 1 },
         showAtmosphere: { type: 'boolean', default: false },
@@ -24,7 +24,7 @@ export class Globe extends BaseComponent {
     });
     
     this.radius = 1;
-    this._texture = null;
+    this._textures = [];
   }
 
   render(scene, params = {}) {
@@ -45,47 +45,97 @@ export class Globe extends BaseComponent {
   }
 
   _createSphere() {
-    // 高面数球体
-    const geometry = new THREE.SphereGeometry(this.radius, 128, 64);
+    // 超高面数，让 displacement 效果平滑
+    const geometry = new THREE.SphereGeometry(this.radius, 256, 128);
     
-    // 用 MeshStandardMaterial（PBR），支持更好的法线贴图效果
-    const material = new THREE.MeshStandardMaterial({
-      roughness: 0.8,
-      metalness: 0.1,
-      color: 0x2233aa,
-      normalScale: new THREE.Vector2(1.5, 1.5) // 法线强度
+    // 自定义 ShaderMaterial：顶点着色器读取高度图做 displacement
+    const material = new THREE.ShaderMaterial({
+      uniforms: {
+        colorMap: { value: null },
+        bumpMap: { value: null },
+        displacementScale: { value: 0.06 }, // 地形起伏强度
+        lightDir: { value: new THREE.Vector3(0.8, 0.5, 0.3).normalize() }
+      },
+      vertexShader: `
+        uniform sampler2D bumpMap;
+        uniform float displacementScale;
+        
+        varying vec2 vUv;
+        varying vec3 vNormal;
+        varying vec3 vWorldPos;
+        varying float vElevation;
+        
+        void main() {
+          vUv = uv;
+          vNormal = normalize(normalMatrix * normal);
+          
+          // 采样高度图
+          float elevation = texture2D(bumpMap, uv).r;
+          vElevation = elevation;
+          
+          // 沿法线方向位移顶点
+          vec3 displaced = position + normal * elevation * displacementScale;
+          
+          vWorldPos = (modelMatrix * vec4(displaced, 1.0)).xyz;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(displaced, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D colorMap;
+        uniform vec3 lightDir;
+        
+        varying vec2 vUv;
+        varying vec3 vNormal;
+        varying vec3 vWorldPos;
+        varying float vElevation;
+        
+        void main() {
+          vec4 color = texture2D(colorMap, vUv);
+          
+          // 简单光照
+          float diff = max(dot(vNormal, lightDir), 0.0);
+          float ambient = 0.3;
+          float lighting = ambient + diff * 0.7;
+          
+          // 海洋变暗（低海拔）
+          float oceanMask = smoothstep(0.02, 0.08, vElevation);
+          vec3 oceanDeep = color.rgb * vec3(0.6, 0.7, 1.0);
+          vec3 finalColor = mix(oceanDeep, color.rgb, oceanMask);
+          
+          // 高海拔雪顶
+          float snow = smoothstep(0.75, 0.9, vElevation);
+          finalColor = mix(finalColor, vec3(0.95, 0.95, 1.0), snow * 0.4);
+          
+          // 地形阴影增强（基于高度差的微弱 AO）
+          float ao = 0.9 + 0.1 * vElevation;
+          
+          gl_FragColor = vec4(finalColor * lighting * ao, 1.0);
+        }
+      `
     });
     
     const loader = new THREE.TextureLoader();
-    let loadedCount = 0;
-    const onLoaded = () => {
-      loadedCount++;
-      if (loadedCount >= 2) {
-        material.color.set(0xffffff);
-        material.needsUpdate = true;
-      }
-    };
     
     // 颜色贴图
     loader.load('/vendor/earth_texture.jpg', 
       (texture) => {
-        this._texture = texture;
-        material.map = texture;
-        onLoaded();
+        this._textures.push(texture);
+        material.uniforms.colorMap.value = texture;
+        material.needsUpdate = true;
       },
       undefined,
-      (err) => console.warn('地球纹理加载失败')
+      (err) => console.warn('颜色贴图加载失败')
     );
     
-    // 法线贴图
-    loader.load('/vendor/earth_normal.png',
+    // 高度图（同时用于 displacement 和光照）
+    loader.load('/vendor/earth_bump.png',
       (texture) => {
-        this._normalTexture = texture;
-        material.normalMap = texture;
-        onLoaded();
+        this._textures.push(texture);
+        material.uniforms.bumpMap.value = texture;
+        material.needsUpdate = true;
       },
       undefined,
-      (err) => console.warn('法线贴图加载失败')
+      (err) => console.warn('高度图加载失败')
     );
     
     this._sphere = new THREE.Mesh(geometry, material);
@@ -101,7 +151,6 @@ export class Globe extends BaseComponent {
       opacity: 0.06
     });
     
-    // 经线
     for (let lng = -180; lng < 180; lng += 30) {
       const points = [];
       for (let lat = -85; lat <= 85; lat += 1) {
@@ -110,7 +159,6 @@ export class Globe extends BaseComponent {
       this.group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), lineMaterial));
     }
     
-    // 纬线
     for (let lat = -60; lat <= 60; lat += 30) {
       const points = [];
       for (let lng = -180; lng <= 180; lng += 1) {
@@ -139,8 +187,7 @@ export class Globe extends BaseComponent {
           vec3 viewDir = normalize(-vPosition);
           float rim = 1.0 - max(0.0, dot(viewDir, vNormal));
           float intensity = pow(rim, 4.0) * 0.3;
-          vec3 color = vec3(0.3, 0.6, 1.0);
-          gl_FragColor = vec4(color, intensity);
+          gl_FragColor = vec4(0.3, 0.6, 1.0, intensity);
         }
       `,
       transparent: true,
@@ -157,20 +204,13 @@ export class Globe extends BaseComponent {
 
   update(params, delta) {
     if (this.params.rotateSpeed) {
-      // 基于 delta time 的自转，帧率无关
       this.group.rotation.y += this.params.rotateSpeed * delta;
     }
   }
 
   destroy() {
-    if (this._texture) {
-      this._texture.dispose();
-      this._texture = null;
-    }
-    if (this._normalTexture) {
-      this._normalTexture.dispose();
-      this._normalTexture = null;
-    }
+    for (const t of this._textures) t.dispose();
+    this._textures = [];
     super.destroy();
   }
 }
