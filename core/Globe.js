@@ -45,19 +45,18 @@ export class Globe extends BaseComponent {
   }
 
   _createSphere() {
-    // 高面数球体，让凹凸效果更细腻
+    // 高面数球体
     const geometry = new THREE.SphereGeometry(this.radius, 128, 64);
     
-    const material = new THREE.MeshPhongMaterial({
-      shininess: 15,
-      specular: new THREE.Color(0x222244),
+    // 用 MeshStandardMaterial（PBR），支持更好的法线贴图效果
+    const material = new THREE.MeshStandardMaterial({
+      roughness: 0.8,
+      metalness: 0.1,
       color: 0x2233aa,
-      bumpScale: 0.2 // 凹凸强度（加大）
+      normalScale: new THREE.Vector2(1.5, 1.5) // 法线强度
     });
     
     const loader = new THREE.TextureLoader();
-    
-    // 并行加载颜色贴图和高度图
     let loadedCount = 0;
     const onLoaded = () => {
       loadedCount++;
@@ -75,22 +74,18 @@ export class Globe extends BaseComponent {
         onLoaded();
       },
       undefined,
-      (err) => {
-        console.warn('地球纹理加载失败，使用纯色 fallback');
-      }
+      (err) => console.warn('地球纹理加载失败')
     );
     
-    // 高度图（凹凸贴图）
-    loader.load('/vendor/earth_bump.png',
+    // 法线贴图
+    loader.load('/vendor/earth_normal.png',
       (texture) => {
-        this._bumpTexture = texture;
-        material.bumpMap = texture;
+        this._normalTexture = texture;
+        material.normalMap = texture;
         onLoaded();
       },
       undefined,
-      (err) => {
-        console.warn('高度图加载失败，无凹凸效果');
-      }
+      (err) => console.warn('法线贴图加载失败')
     );
     
     this._sphere = new THREE.Mesh(geometry, material);
@@ -172,9 +167,9 @@ export class Globe extends BaseComponent {
       this._texture.dispose();
       this._texture = null;
     }
-    if (this._bumpTexture) {
-      this._bumpTexture.dispose();
-      this._bumpTexture = null;
+    if (this._normalTexture) {
+      this._normalTexture.dispose();
+      this._normalTexture = null;
     }
     super.destroy();
   }
