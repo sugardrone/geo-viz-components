@@ -53,7 +53,7 @@ export class Globe extends BaseComponent {
       uniforms: {
         colorMap: { value: null },
         bumpMap: { value: null },
-        displacementScale: { value: 0.06 }, // 地形起伏强度
+        displacementScale: { value: 0.15 }, // 地形起伏强度（加大）
         lightDir: { value: new THREE.Vector3(0.8, 0.5, 0.3).normalize() }
       },
       vertexShader: `
@@ -128,7 +128,7 @@ export class Globe extends BaseComponent {
     );
     
     // 高度图（同时用于 displacement 和光照）
-    loader.load('/vendor/earth_bump.png',
+    loader.load('/vendor/earth_displacement.png',
       (texture) => {
         this._textures.push(texture);
         material.uniforms.bumpMap.value = texture;
