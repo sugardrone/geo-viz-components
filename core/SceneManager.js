@@ -64,17 +64,22 @@ export class SceneManager {
   }
 
   _setupLights() {
-    // 环境光
-    const ambient = new THREE.AmbientLight(0x444455, 0.8);
+    // 环境光（降低强度，让凹凸更明显）
+    const ambient = new THREE.AmbientLight(0x444455, 0.5);
     this.scene.add(ambient);
     
-    // 主光源（模拟太阳）
+    // 主光源（斜角照射，突出地形起伏）
     const sun = new THREE.DirectionalLight(0xffffff, 2.0);
-    sun.position.set(5, 3, 5);
+    sun.position.set(8, 5, 3);
     this.scene.add(sun);
     
+    // 侧光（强化凹凸感）
+    const side = new THREE.DirectionalLight(0xffffff, 0.8);
+    side.position.set(-5, 2, -3);
+    this.scene.add(side);
+    
     // 补光
-    const fill = new THREE.DirectionalLight(0x8899bb, 0.6);
+    const fill = new THREE.DirectionalLight(0x8899bb, 0.4);
     fill.position.set(-3, -1, -3);
     this.scene.add(fill);
   }
